@@ -1,9 +1,9 @@
-require 'fission/utils/message_unpack'
+require 'fission'
 require 'carnivore/callback'
 
 module Fission
   module PackageBuilder
-    class Repository < Carnivore::Callback
+    class Repository < Fission::Callback
 
       include Fission::Utils::MessageUnpack
 
@@ -14,11 +14,11 @@ module Fission
       def execute(message)
         info "#{message} repository not provided. Forwarding to code fetcher."
         payload = unpack(message)
-        Celluloid::Actor[:fission_bus].transmit(
-          payload, :code_fetcher
-        )
+        Celluloid::Actor[:fission_code_fetcher].transmit(payload, message)
       end
 
     end
   end
 end
+
+Fission.register(:fission_package_builder, Fission::PackageBuilder::Repository)

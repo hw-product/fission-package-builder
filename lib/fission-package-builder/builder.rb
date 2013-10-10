@@ -1,11 +1,8 @@
-require 'fission/utils/message_unpack'
-require 'carnivore/callback'
+require 'fission/callback'
 
 module Fission
   module PackageBuilder
-    class Builder < Carnivore::Callback
-
-      include Fission::Utils::MessageUnpack
+    class Builder < Fission::Callback
 
       def valid?(message)
         m = unpack(message)
@@ -19,3 +16,6 @@ module Fission
     end
   end
 end
+
+Fission.register(:fission_package_builder, Fission::Validators::Validate)
+Fission.register(:fission_package_builder, Fission::PackageBuilder::Builder)
