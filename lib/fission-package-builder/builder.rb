@@ -6,11 +6,13 @@ module Fission
 
       def valid?(message)
         m = unpack(message)
-        m[:user] && m[:repository] && m[:job] == 'package_builder'
+        m[:user] && m[:repository]
       end
 
       def execute(message)
-        info "#{message} building package"
+        info "I'm building a package!"
+        info '*' * 100
+        message.confirm!
       end
 
     end
