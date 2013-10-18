@@ -14,7 +14,7 @@ module Fission
       def execute(message)
         info "#{message} repository not provided. Forwarding to code fetcher."
         payload = unpack(message)
-        Celluloid::Actor[:fission_code_fetcher].transmit(payload, message)
+        transmit(:fission_code_fetcher, payload)
       end
 
     end
