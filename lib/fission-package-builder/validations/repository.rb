@@ -8,7 +8,8 @@ module Fission
       include Fission::Utils::MessageUnpack
 
       def valid?(message)
-        !unpack(message).has_key?(:repository)
+        m = unpack(message)
+        m.has_key?(:user) && !m.has_key?(:repository)
       end
 
       def execute(message)
