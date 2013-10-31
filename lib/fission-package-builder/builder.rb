@@ -1,5 +1,5 @@
 require 'fission/callback'
-
+require 'fission-package-builder/packager'
 module Fission
   module PackageBuilder
     class Builder < Fission::Callback
@@ -10,9 +10,18 @@ module Fission
       end
 
       def execute(message)
-        info "I'm building a package!"
-        info '*' * 100
+        config = load_config(message[:repository][:path])
+        chef_json = build_chef_json(config)
+        start_build
         message.confirm!
+      end
+
+      def load_config(repo_path)
+        Packager.load(File.join(repo_path, Packager.file_name))
+      end
+
+      def build_chef_json(config)
+
       end
 
     end
