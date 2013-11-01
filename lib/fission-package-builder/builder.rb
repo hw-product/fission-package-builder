@@ -12,7 +12,7 @@ module Fission
       def execute(message)
         config = load_config(message[:repository][:path])
         chef_json = build_chef_json(config)
-        start_build
+        start_build(message[:message_id], chef_json)
         message.confirm!
       end
 
@@ -21,7 +21,24 @@ module Fission
       end
 
       def build_chef_json(config)
+        JSON.dump(
+          :fission => {
+            :build => config
+          },
+          :run_list => ['recipe[fission]']
+        )
+      end
 
+      def start_build(uuid, json)
+        json_path = "/tmp/chef-#{uuid}.json"
+        File.open(json_path, 'w') do |f|
+          f.puts json
+        end
+        process_manager.process(uuid, ['chef-solo', '-j', json_path]) do |process|
+          process.io.inherit!
+          process.detach true
+          process.start
+        end
       end
 
     end
