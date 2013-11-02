@@ -59,7 +59,7 @@ module Fission
       end
 
       def solo_config_path(uuid)
-        File.join(workspace, "#{uuid}-solo.rb")
+        File.join(workspace(:solos), "#{uuid}-solo.rb")
       end
 
       def fission_cookbook_path
