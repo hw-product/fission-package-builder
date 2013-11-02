@@ -11,9 +11,10 @@ module Fission
       end
 
       def execute(message)
-        config = load_config(message[:repository][:path])
+        m = unpack(message)
+        config = load_config(m[:repository][:path])
         chef_json = build_chef_json(config)
-        start_build(message[:message_id], chef_json)
+        start_build(m[:message_id], chef_json)
         message.confirm!
       end
 
@@ -38,16 +39,19 @@ module Fission
         log_file_path = File.join(workspace(:log), "#{uuid}.log")
         log_file = File.open(log_file_path, 'w')
         log_file.sync = true
-        process_manager.process(uuid, ['chef-solo', '-j', json_path, '-c', write_solo_config(uuid)]) do |process|
+        command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid)]
+        debug "Starting command: #{command.join(' ')}"
+        process_manager.process(uuid, command) do |process|
           process.io.stdout = process.io.stderr = log_file
-          process.detach true
+          process.detach = true
           process.start
         end
+
       end
 
       def workspace(thing=nil)
-        base = Carnivore.get(:fission, :package_builder, :working_directory) || '/tmp'
-        path = File.join(base, thing)
+        base = Carnivore::Config.get(:fission, :package_builder, :working_directory) || '/tmp'
+        path = File.join(base, thing.to_s)
         unless(File.directory?(path))
           FileUtils.mkdir_p(path)
         end
@@ -71,7 +75,7 @@ module Fission
 
       def write_solo_config(uuid)
         solo_path = solo_config_path(uuid)
-        unless(File.exists?(solo_config_path))
+        unless(File.exists?(solo_path))
           cache_path = workspace("chef-cache/#{uuid}")
           File.open(solo_path, 'w') do |file|
             file.puts "file_cache_path '#{cache_path}'"
@@ -79,6 +83,10 @@ module Fission
           end
         end
         solo_path
+      end
+
+      def chef_exec_path
+        Carnivore::Config.get(:fission, :package_builder, :chef_solo_path) || 'chef-solo'
       end
 
     end
