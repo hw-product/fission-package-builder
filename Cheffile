@@ -1,0 +1,3 @@
+site 'http://community.opscode.com/api/v1'
+
+cookbook 'fission', git: 'git@github.com:heavywater/chef-fission'

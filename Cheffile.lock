@@ -1,0 +1,47 @@
+SITE
+  remote: http://community.opscode.com/api/v1
+  specs:
+    apache2 (1.8.4)
+    apt (2.3.0)
+    build-essential (1.4.2)
+    builder (0.1.4)
+      build-essential (>= 0.0.0)
+      ssh_known_hosts (>= 0.0.0)
+    delayed_evaluator (0.2.0)
+    discovery (0.2.0)
+    fpm-tng (0.1.7)
+    gpg (0.2.2)
+    lxc (1.0.0)
+    ohai (1.1.12)
+    partial_search (1.0.6)
+    pkg-build (0.2.2)
+      apt (>= 1.8.2)
+      builder (>= 0.0.0)
+      delayed_evaluator (>= 0.0.0)
+      discovery (>= 0.2.0)
+      fpm-tng (~> 0.1.4)
+      lxc (~> 1.0.0)
+      ohai (>= 0.0.0)
+      repository (>= 0.0.0)
+      reprepro (~> 0.3.0)
+    repository (0.1.8)
+      apache2 (>= 0.0.0)
+      apt (>= 0.0.0)
+      gpg (>= 0.2.2)
+    reprepro (0.3.0)
+      apache2 (>= 0.0.0)
+      build-essential (>= 0.0.0)
+    ssh_known_hosts (1.0.2)
+      partial_search (>= 0.0.0)
+
+GIT
+  remote: git@github.com:heavywater/chef-fission
+  ref: master
+  sha: 8b3677416dd7abe39fa8ec5e83183705f5dcfbe4
+  specs:
+    fission (0.1.0)
+      pkg-build (>= 0.0.0)
+
+DEPENDENCIES
+  fission (>= 0)
+
