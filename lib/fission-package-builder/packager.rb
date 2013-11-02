@@ -23,6 +23,6 @@ module Fission
     # Alias for short form
     Pkgr = Packager
     # Default file name
-    Package.file_name = '.pkgr.io'
+    Packager.file_name = '.pkgr.io'
   end
 end
