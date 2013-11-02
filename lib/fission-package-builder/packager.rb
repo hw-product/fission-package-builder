@@ -15,7 +15,9 @@ module Fission
         end
 
         def load(path)
-          PackageBuilder.eval(File.read(path))
+          PackageBuilder.class_eval do
+            eval(File.read(path))
+          end
         end
       end
     end
