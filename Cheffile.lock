@@ -4,44 +4,56 @@ SITE
     apache2 (1.8.4)
     apt (2.3.0)
     build-essential (1.4.2)
-    builder (0.1.4)
-      build-essential (>= 0.0.0)
-      ssh_known_hosts (>= 0.0.0)
-    delayed_evaluator (0.2.0)
     discovery (0.2.0)
-    fpm-tng (0.1.7)
-    gpg (0.2.2)
-    lxc (1.0.0)
+    dpkg_autostart (0.1.8)
     ohai (1.1.12)
     partial_search (1.0.6)
-    pkg-build (0.2.2)
-      apt (>= 1.8.2)
-      builder (>= 0.0.0)
-      delayed_evaluator (>= 0.0.0)
-      discovery (>= 0.2.0)
-      fpm-tng (~> 0.1.4)
-      lxc (~> 1.0.0)
-      ohai (>= 0.0.0)
-      repository (>= 0.0.0)
-      reprepro (~> 0.3.0)
-    repository (0.1.8)
-      apache2 (>= 0.0.0)
+    pkg-build (0.1.9)
       apt (>= 0.0.0)
-      gpg (>= 0.2.2)
-    reprepro (0.3.0)
+      builder (>= 0.0.0)
+      discovery (>= 0.2.0)
+      fpm-tng (>= 0.0.0)
+      ohai (>= 0.0.0)
+      reprepro (>= 0.0.0)
+    reprepro (0.4.0)
       apache2 (>= 0.0.0)
       build-essential (>= 0.0.0)
     ssh_known_hosts (1.0.2)
       partial_search (>= 0.0.0)
 
 GIT
-  remote: git@github.com:heavywater/chef-fission
-  ref: master
-  sha: 8b3677416dd7abe39fa8ec5e83183705f5dcfbe4
+  remote: git://github.com/hw-cookbooks/builder.git
+  ref: develop
+  sha: 6e2b59d5f2b8b2365051a5120d6f6a8f92c336d7
+  specs:
+    builder (0.1.5)
+      build-essential (>= 0.0.0)
+      ssh_known_hosts (>= 0.0.0)
+
+GIT
+  remote: git://github.com/hw-cookbooks/fpm-tng.git
+  ref: develop
+  sha: fd2696eaca6c558e8b2f327592304216bf3366b9
+  specs:
+    fpm-tng (0.1.7)
+
+GIT
+  remote: git://github.com/hw-cookbooks/lxc.git
+  ref: develop
+  sha: a628f753dbf4fb8bfe7576c7af3328ecd703690e
+  specs:
+    lxc (1.1.3)
+      dpkg_autostart (~> 0.1.6)
+
+PATH
+  remote: ../chef/fission
   specs:
     fission (0.1.0)
       pkg-build (>= 0.0.0)
 
 DEPENDENCIES
+  builder (>= 0)
   fission (>= 0)
+  fpm-tng (>= 0)
+  lxc (>= 0)
 
