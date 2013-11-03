@@ -13,7 +13,7 @@ module Fission
       def execute(message)
         m = unpack(message)
         config = load_config(m[:repository][:path])
-        chef_json = build_chef_json(config)
+        chef_json = build_chef_json(config, m)
         start_build(m[:message_id], chef_json)
         message.confirm!
       end
@@ -22,10 +22,12 @@ module Fission
         Packager.load(File.join(repo_path, Packager.file_name))
       end
 
-      def build_chef_json(config)
+      def build_chef_json(config, params)
         JSON.dump(
           :fission => {
-            :build => config
+            :build => config.merge(
+              :target_store => params[:repository][:path]
+            )
           },
           :run_list => ['recipe[fission]']
         )
@@ -43,6 +45,7 @@ module Fission
         debug "Starting command: #{command.join(' ')}"
         process_manager.process(uuid, command) do |process|
           process.io.stdout = process.io.stderr = log_file
+          process.cwd = '/tmp'
           process.detach = true
           process.start
         end
