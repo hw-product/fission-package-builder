@@ -18,13 +18,13 @@ SITE
     reprepro (0.4.0)
       apache2 (>= 0.0.0)
       build-essential (>= 0.0.0)
-    ssh_known_hosts (1.0.2)
+    ssh_known_hosts (1.1.0)
       partial_search (>= 0.0.0)
 
 GIT
   remote: git://github.com/hw-cookbooks/builder.git
   ref: develop
-  sha: 6e2b59d5f2b8b2365051a5120d6f6a8f92c336d7
+  sha: ed8dad7c4bdbbed7e93867323de2172ca7ac257d
   specs:
     builder (0.1.5)
       build-essential (>= 0.0.0)
@@ -45,8 +45,10 @@ GIT
     lxc (1.1.3)
       dpkg_autostart (~> 0.1.6)
 
-PATH
-  remote: ../chef/fission
+GIT
+  remote: git@github.com:heavywater/chef-fission.git
+  ref: master
+  sha: 6cc2c60ebab6345885688ce93ae112d55c6c5556
   specs:
     fission (0.1.0)
       pkg-build (>= 0.0.0)
