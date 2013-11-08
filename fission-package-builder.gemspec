@@ -12,5 +12,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'fission'
   s.add_dependency 'carnivore'
   s.add_dependency 'attribute_struct'
+  s.add_dependency 'elecksee'
   s.files = Dir['**/*']
 end
