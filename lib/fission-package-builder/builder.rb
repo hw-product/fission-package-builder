@@ -9,16 +9,17 @@ module Fission
     class Builder < Fission::Callback
 
       def valid?(message)
+        super
         m = unpack(message)
-        m[:user] && m[:repository]
+        m[:data][:user] && m[:data][:repository]
       end
 
       def execute(message)
         m = unpack(message)
-        config = load_config(m[:repository][:path])
+        config = load_config(m[:data][:repository][:path])
         chef_json = build_chef_json(config, m)
         start_build(m[:message_id], chef_json)
-        message.confirm!
+        completed(m, message)
       end
 
       def load_config(repo_path)
@@ -29,7 +30,7 @@ module Fission
         JSON.dump(
           :fission => {
             :build => config.merge(
-              :target_store => repository_copy(params[:message_id], params[:repository][:path])
+              :target_store => repository_copy(params[:message_id], params[:data][:repository][:path])
             )
           },
           :fpm_tng => {
@@ -114,5 +115,5 @@ module Fission
   end
 end
 
-Fission.register(:fission_package_builder, Fission::Validators::Validate)
-Fission.register(:fission_package_builder, Fission::PackageBuilder::Builder)
+Fission.register(:package_builder, :validators, Fission::Validators::Validate)
+Fission.register(:package_builder, :builder, Fission::PackageBuilder::Builder)
