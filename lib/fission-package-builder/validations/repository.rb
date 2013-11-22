@@ -9,17 +9,17 @@ module Fission
 
       def valid?(message)
         m = unpack(message)
-        m.has_key?(:user) && !m.has_key?(:repository)
+        m[:data][:user] && !m[:data][:repository]
       end
 
       def execute(message)
         info "#{message} repository not provided. Forwarding to code fetcher."
         payload = unpack(message)
-        transmit(:fission_code_fetcher, payload)
+        transmit(:code_fetcher, payload)
       end
 
     end
   end
 end
 
-Fission.register(:fission_package_builder, Fission::PackageBuilder::Repository)
+Fission.register(:package_builder, :validators, Fission::PackageBuilder::Repository)
