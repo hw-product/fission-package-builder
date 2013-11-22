@@ -1,5 +1,8 @@
 require 'fission/callback'
+require 'fission/validators/validate'
+require 'fission/validators/repository'
 require 'fission-package-builder/packager'
+
 require 'elecksee/ephemeral'
 
 Lxc.use_sudo = true
@@ -9,9 +12,9 @@ module Fission
     class Builder < Fission::Callback
 
       def valid?(message)
-        super
-        m = unpack(message)
-        m[:data][:user] && m[:data][:repository]
+        super do |m|
+          m[:data][:user] && m[:data][:repository]
+        end
       end
 
       def execute(message)
@@ -116,4 +119,5 @@ module Fission
 end
 
 Fission.register(:package_builder, :validators, Fission::Validators::Validate)
+Fission.register(:package_builder, :validators, Fission::Validators::Repository)
 Fission.register(:package_builder, :builder, Fission::PackageBuilder::Builder)
