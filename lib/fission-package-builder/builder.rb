@@ -11,18 +11,30 @@ module Fission
   module PackageBuilder
     class Builder < Fission::Callback
 
+      def setup(*args)
+        if(RUBY_PLATFORM == 'java')
+          require 'fission-package-builder/sandbox'
+        end
+      end
+
       def valid?(message)
         super do |m|
-          m[:data][:user] && m[:data][:repository]
+          retrieve(m, :data, :account) && retrieve(m, :data, :repository)
         end
       end
 
       def execute(message)
         m = unpack(message)
-        config = load_config(m[:data][:repository][:path])
-        chef_json = build_chef_json(config, m)
-        start_build(m[:message_id], chef_json)
-        completed(m, message)
+        begin
+          config = load_config(m[:data][:repository][:path])
+          chef_json = build_chef_json(config, m)
+          start_build(m[:message_id], chef_json)
+          completed(m, message)
+        rescue Fission::Error => e
+          error "Failure encountered: #{e.class}: #{e}"
+          debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
+          failed(m, message, e.message)
+        end
       end
 
       def load_config(repo_path)
