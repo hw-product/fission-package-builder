@@ -1,14 +1,14 @@
 require 'sandbox'
 require 'carnivore/utils'
 require 'attribute_struct'
-require 'attribute_struct/hash'
+require 'attribute_struct/attribute_hash'
 require 'hashie'
 
 module Fission
   module PackageBuilder
     class Sandbox < Sandbox::Safe
 
-      include Carivore::Utils::Logging
+      include Carnivore::Utils::Logging
 
       class << self
 
