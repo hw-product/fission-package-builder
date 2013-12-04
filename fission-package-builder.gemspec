@@ -13,5 +13,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'carnivore'
   s.add_dependency 'attribute_struct'
   s.add_dependency 'elecksee'
+  s.add_dependency 'minitar'
+  s.add_dependency 'childprocess'
   s.files = Dir['**/*']
 end
