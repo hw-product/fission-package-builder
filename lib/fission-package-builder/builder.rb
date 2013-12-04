@@ -35,12 +35,13 @@ module Fission
       def execute(message)
         payload = unpack(message)
         begin
+          payload[:data][:package_builder] = {}
           copy_path = repository_copy(payload[:message_id], payload[:data][:repository][:path])
           config = load_config(copy_path)
           chef_json = build_chef_json(config, payload, copy_path)
           start_build(payload[:message_id], chef_json)
-          store_packages(payload, copy_path)
-          completed(payload, message)
+          store_packages(payload)
+          job_completed(:package_builder, payload, message)
         rescue Fission::Error => e
           error "Failure encountered: #{e.class}: #{e}"
           debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
@@ -48,13 +49,13 @@ module Fission
         end
       end
 
-      def store_packages(payload, directory)
-        keys = Dir.glob(File.join(directory, 'packages/*')).map do |file|
+      def store_packages(payload)
+        keys = Dir.glob(File.join(workspace(payload[:message_id], :packages), '*')).map do |file|
           key = "#{payload[:message_id]}_#{File.basename(file)}"
           object_store.put(key, file)
           key
         end
-        payload[:data][:package_builder] = {:keys => keys}
+        payload[:data][:package_builder][:keys] = keys
         true
       end
 
@@ -63,6 +64,8 @@ module Fission
       end
 
       def build_chef_json(config, params, target_store)
+        config[:build][:version] ||= Time.now.strftime('%Y%m%d%H%M%S')
+        params[:data][:package_builder][:version] = config[:build][:version]
         JSON.dump(
           :fission => {
             :build => config.merge(
