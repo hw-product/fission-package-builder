@@ -1,19 +1,28 @@
 require 'fission/callback'
 require 'fission/validators/validate'
 require 'fission/validators/repository'
+require 'fission-package-builder/errors'
 require 'fission-package-builder/packager'
+
+require 'fission-assets'
+
+require 'archive/tar/minitar'
 
 require 'elecksee/ephemeral'
 
 Lxc.use_sudo = true
+Lxc.shellout_helper = :childprocess
 
 module Fission
   module PackageBuilder
     class Builder < Fission::Callback
 
+      attr_reader :object_store
+
       def setup(*args)
+        @object_store = Fission::Assets::Store.new
         if(RUBY_PLATFORM == 'java')
-          require 'fission-package-builder/sandbox'
+#          require 'fission-package-builder/sandbox'
         end
       end
 
@@ -24,28 +33,40 @@ module Fission
       end
 
       def execute(message)
-        m = unpack(message)
+        payload = unpack(message)
         begin
-          config = load_config(m[:data][:repository][:path])
-          chef_json = build_chef_json(config, m)
-          start_build(m[:message_id], chef_json)
-          completed(m, message)
+          copy_path = repository_copy(payload[:message_id], payload[:data][:repository][:path])
+          config = load_config(copy_path)
+          chef_json = build_chef_json(config, payload, copy_path)
+          start_build(payload[:message_id], chef_json)
+          store_packages(payload, copy_path)
+          completed(payload, message)
         rescue Fission::Error => e
           error "Failure encountered: #{e.class}: #{e}"
           debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
-          failed(m, message, e.message)
+          failed(payload, message, e.message)
         end
+      end
+
+      def store_packages(payload, directory)
+        keys = Dir.glob(File.join(directory, '*')).map do |file|
+          key = "#{payload[:message_id]}_#{File.basename(file)}"
+          object_store.put(key, file)
+          key
+        end
+        payload[:data][:package_builder] = {:keys => keys}
+        true
       end
 
       def load_config(repo_path)
         Packager.load(File.join(repo_path, Packager.file_name))
       end
 
-      def build_chef_json(config, params)
+      def build_chef_json(config, params, target_store)
         JSON.dump(
           :fission => {
             :build => config.merge(
-              :target_store => repository_copy(params[:message_id], params[:data][:repository][:path])
+              :target_store => target_store
             )
           },
           :fpm_tng => {
@@ -73,6 +94,7 @@ module Fission
           ephemeral.start!
         rescue Lxc::CommandFailed => e
           error "Package build failed: #{e.result.stderr}"
+          raise e
         end
         debug "Finished command: #{command.join(' ')}"
       end
@@ -88,7 +110,10 @@ module Fission
 
       def repository_copy(uuid, repo_path)
         code_path = workspace(uuid, :code)
-        FileUtils.cp_r("#{repo_path}/.", code_path)
+        Dir.chdir(code_path) do
+          tarball = object_store.get(repo_path)
+          Archive::Tar::Minitar.unpack(tarball.path, '.')
+        end
         code_path
       end
 
