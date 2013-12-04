@@ -49,7 +49,7 @@ module Fission
       end
 
       def store_packages(payload, directory)
-        keys = Dir.glob(File.join(directory, '*')).map do |file|
+        keys = Dir.glob(File.join(directory, 'packages/*')).map do |file|
           key = "#{payload[:message_id]}_#{File.basename(file)}"
           object_store.put(key, file)
           key
