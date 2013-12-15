@@ -66,7 +66,7 @@ module Fission
         config[:build][:version] ||= Time.now.strftime('%Y%m%d%H%M%S')
         params[:data][:package_builder][:version] = config[:build][:version]
         JSON.dump(
-          :fission => {
+          :packager => {
             :build => config.merge(
               :target_store => target_store
             )
@@ -74,7 +74,7 @@ module Fission
           :fpm_tng => {
             :package_dir => workspace(params[:message_id], :packages)
           },
-          :run_list => ['recipe[fission]']
+          :run_list => ['recipe[packager]']
         )
       end
 
