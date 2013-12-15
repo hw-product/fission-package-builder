@@ -5,8 +5,7 @@ require 'fission-package-builder/errors'
 require 'fission-package-builder/packager'
 
 require 'fission-assets'
-
-require 'archive/tar/minitar'
+require 'fission-assets/packer'
 
 require 'elecksee/ephemeral'
 
@@ -113,11 +112,7 @@ module Fission
 
       def repository_copy(uuid, repo_path)
         code_path = workspace(uuid, :code)
-        Dir.chdir(code_path) do
-          tarball = object_store.get(repo_path)
-          Archive::Tar::Minitar.unpack(tarball.path, '.')
-        end
-        code_path
+        Fission::Assets::Packer.unpack(object_store.get(repo_path), code_path)
       end
 
       def fission_cookbook_path
