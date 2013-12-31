@@ -2,4 +2,3 @@
 !.gitignore
 !.librarian*
 tmp*
-vendor*
