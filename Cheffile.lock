@@ -67,9 +67,9 @@ GIT
 GIT
   remote: git://github.com/hw-cookbooks/lxc.git
   ref: develop
-  sha: 422bdbb7d826f7a63c459b0ff63db1a4500ef093
+  sha: 4812674de09ad1683f92ff1d9d48035f798c6802
   specs:
-    lxc (1.1.7)
+    lxc (1.1.9)
       dpkg_autostart (~> 0.1.10)
 
 GIT
