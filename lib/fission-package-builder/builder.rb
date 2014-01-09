@@ -132,7 +132,7 @@ module Fission
           )
           @cookbook_path = File.join(spec.full_gem_path, 'vendor/cookbooks')
 =end
-          @cookbook_path = File.expand_path(File.dirname(__FILE__), '../../vendor/cookbooks')
+          @cookbook_path = File.expand_path(File.join(File.dirname(__FILE__), '../../vendor/cookbooks'))
         end
         @cookbook_path
       end
@@ -152,12 +152,29 @@ module Fission
 
       def cookbook_copy(uuid)
         local_path = workspace(uuid, :cookbooks)
-        FileUtils.cp_r("#{fission_cookbook_path}/.", local_path)
+        directory_copy(fission_cookbook_path, local_path)
         local_path
       end
 
       def chef_exec_path
         Carnivore::Config.get(:fission, :package_builder, :chef_solo_path) || 'chef-solo'
+      end
+
+      def directory_copy(source, target)
+        unless(File.directory?(target))
+          FileUtils.mkdir_p(target)
+        end
+        Dir.glob(File.join(source, '**', '*')).sort.each do |path|
+          next unless File.file?(path)
+          new_path = File.join(target, path.sub(source, ''))
+          unless(File.directory?(File.dirname(new_path)))
+            FileUtils.mkdir_p(File.dirname(new_path))
+          end
+          File.open(new_path, 'w') do |new_file|
+            new_file.print File.read(path)
+          end
+        end
+        true
       end
 
     end
