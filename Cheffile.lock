@@ -51,7 +51,7 @@ SITE
 GIT
   remote: git://github.com/hw-cookbooks/builder.git
   ref: develop
-  sha: ed8dad7c4bdbbed7e93867323de2172ca7ac257d
+  sha: 2d731ef39f9d80ea13f1127ae3c140ba8a21a0ba
   specs:
     builder (0.1.5)
       build-essential (>= 0.0.0)
