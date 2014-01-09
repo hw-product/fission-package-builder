@@ -123,11 +123,16 @@ module Fission
 
       def fission_cookbook_path
         unless(@cookbook_path)
+=begin
+# For now we need to use relative pathing since we are forcibly
+# loading paths when running via jar
           spec = Gem::Specification.find_by_name(
             'fission-package-builder',
             Fission::PackageBuilder::VERSION.version
           )
           @cookbook_path = File.join(spec.full_gem_path, 'vendor/cookbooks')
+=end
+          @cookbook_path = File.expand_path(File.dirname(__FILE__), '../../vendor/cookbooks')
         end
         @cookbook_path
       end
