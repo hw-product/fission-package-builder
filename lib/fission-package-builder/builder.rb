@@ -10,7 +10,7 @@ require 'fission-assets/packer'
 require 'elecksee/ephemeral'
 
 Lxc.use_sudo = true
-Lxc.shellout_helper = :childprocess
+Lxc.shellout_helper = :childprocess #:mixlib_shellout
 
 module Fission
   module PackageBuilder
@@ -69,7 +69,13 @@ module Fission
           :packager => {
             :build => config.merge(
               :target_store => target_store
-            )
+            ),
+            :environment => {
+              'PACKAGER_VERSION' => config[:build][:version],
+              'PACKAGER_COMMIT_SHA' => params[:data][:github][:after],
+              'PACKAGER_PUSHER_NAME' => params[:data][:github][:pusher][:name],
+              'PACKAGER_PUSHER_EMAIL' => params[:data][:github][:pusher][:email]
+            }
           },
           :fpm_tng => {
             :package_dir => workspace(params[:message_id], :packages)
