@@ -75,7 +75,7 @@ GIT
 GIT
   remote: git@github.com:heavywater/chef-packager.git
   ref: master
-  sha: 30a702f5246c4622e50ae5de1a40a8459cbdd31f
+  sha: e7be09011804441c92f51e1c15a6f639c75f127c
   specs:
     packager (0.1.0)
       erlang (>= 0.0.0)
