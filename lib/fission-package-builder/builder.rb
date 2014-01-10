@@ -84,6 +84,14 @@ module Fission
         )
       end
 
+      def packages_directory
+        unless(@pkg_dir)
+          @pkg_dir = Carnivore::Config.get(:fission, :package_builder, :packages_directory) || '/tmp/packages'
+          FileUtils.mkdir_p(@pkg_dir)
+        end
+        @pkg_dir
+      end
+
       def start_build(uuid, json)
         json_path = File.join(workspace(uuid, :first_runs), "#{uuid}.json")
         File.open(json_path, 'w') do |f|
@@ -95,7 +103,7 @@ module Fission
         command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid)]
         ephemeral = Lxc::Ephemeral.new(
           :original => 'ubuntu_1204',
-          :bind => '/tmp/packages',
+          :bind => packages_directory,
           :ephemeral_command => command.join(' ')
         )
         begin
