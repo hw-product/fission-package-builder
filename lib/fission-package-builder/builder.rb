@@ -78,18 +78,11 @@ module Fission
             }
           },
           :fpm_tng => {
-            :package_dir => workspace(params[:message_id], :packages)
+            :package_dir => workspace(params[:message_id], :packages),
+            :build_dir => workspace(params[:message_id], :fpm)
           },
           :run_list => ['recipe[packager]']
         )
-      end
-
-      def packages_directory
-        unless(@pkg_dir)
-          @pkg_dir = Carnivore::Config.get(:fission, :package_builder, :packages_directory) || '/tmp/packages'
-          FileUtils.mkdir_p(@pkg_dir)
-        end
-        @pkg_dir
       end
 
       def start_build(uuid, json)
@@ -103,7 +96,7 @@ module Fission
         command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid)]
         ephemeral = Lxc::Ephemeral.new(
           :original => 'ubuntu_1204',
-          :bind => packages_directory,
+          :bind => workspace(uuid),
           :ephemeral_command => command.join(' ')
         )
         begin
