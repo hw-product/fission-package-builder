@@ -171,8 +171,9 @@ module Fission
             FileUtils.mkdir_p(File.dirname(new_path))
           end
           begin
+            content = File.read(path)
             File.open(new_path, 'w') do |new_file|
-              new_file.print File.read(path)
+              new_file.print content
             end
           rescue => e
             error "Failed to copy file to local system: #{path} -> #{new_path}"
