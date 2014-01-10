@@ -164,22 +164,27 @@ module Fission
         unless(File.directory?(target))
           FileUtils.mkdir_p(target)
         end
-        Dir.glob(File.join(source, '**', '*')).sort.each do |path|
-          next unless File.file?(path)
-          new_path = File.join(target, path.sub(source, ''))
-          unless(File.directory?(File.dirname(new_path)))
-            FileUtils.mkdir_p(File.dirname(new_path))
-          end
-          begin
-            source_file = File.open(path, 'rb')
-            File.open(new_path, 'wb') do |new_file|
-              while(data = source_file.read(2048))
-                new_file.print data
-              end
+        Dir.new(source).each do |_path|
+          next if _path == '.' || _path == '..'
+          path = File.join(source, _path)
+          if(File.directory?(path))
+            directory_copy(path, File.join(target, _path))
+          else
+            new_path = File.join(target, _path)
+            unless(File.directory?(File.dirname(new_path)))
+              FileUtils.mkdir_p(File.dirname(new_path))
             end
-          rescue => e
-            error "Failed to copy file to local system: #{path} -> #{new_path}"
-            debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
+            begin
+              source_file = File.open(path, 'rb')
+              File.open(new_path, 'wb') do |new_file|
+                while(data = source_file.read(2048))
+                  new_file.print data
+                end
+              end
+            rescue => e
+              error "Failed to copy file to local system: #{path} -> #{new_path}"
+              debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
+            end
           end
         end
         true
