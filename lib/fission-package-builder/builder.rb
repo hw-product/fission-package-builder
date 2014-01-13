@@ -25,6 +25,7 @@ module Fission
         end
       end
 
+      # Only build if we have an account set and repository available
       def valid?(message)
         super do |m|
           retrieve(m, :data, :account) && retrieve(m, :data, :repository)
@@ -48,6 +49,8 @@ module Fission
         end
       end
 
+      # payload:: Payload
+      # Store packages into private data store
       def store_packages(payload)
         keys = Dir.glob(File.join(workspace(payload[:message_id], :packages), '*')).map do |file|
           key = "#{payload[:message_id]}_#{File.basename(file)}"
@@ -58,12 +61,24 @@ module Fission
         true
       end
 
+      # repo_path:: Path to repository on local sytem
+      # Returns hash'ed configuration file
       def load_config(repo_path)
         Packager.load(File.join(repo_path, Packager.file_name))
       end
 
+      # config:: build config hash
+      # params:: payload
+      # target_store:: location to store built packages
+      # Build the JSON for our chef run
       def build_chef_json(config, params, target_store)
-        config[:build][:version] ||= Time.now.strftime('%Y%m%d%H%M%S')
+        unless(config[:build][:version])
+          if((ref = retrieve(params, :data, :github, :ref)).start_with?('refs/tags'))
+            config[:build][:version] = ref.sub('refs/tags', '')
+          else
+            config[:build][:version] = Time.now.strftime('%Y%m%d%H%M%S')
+          end
+        end
         params[:data][:package_builder][:version] = config[:build][:version]
         JSON.dump(
           :packager => {
@@ -85,6 +100,9 @@ module Fission
         )
       end
 
+      # uuid:: unique ID (message id)
+      # json:: chef json
+      # Start the build
       def start_build(uuid, json)
         json_path = File.join(workspace(uuid, :first_runs), "#{uuid}.json")
         File.open(json_path, 'w') do |f|
@@ -108,6 +126,9 @@ module Fission
         debug "Finished command: #{command.join(' ')}"
       end
 
+      # uuid:: unique id (message id)
+      # thing:: bucket in workspace
+      # Return path to workspace (creates if required)
       def workspace(uuid, thing=nil)
         base = Carnivore::Config.get(:fission, :package_builder, :working_directory) || '/tmp'
         path = File.join(base, uuid, thing.to_s)
@@ -117,27 +138,25 @@ module Fission
         path
       end
 
+      # uuid:: unique id (message id)
+      # repo_path:: Repo to fetch
+      # Unpacks repository into `code` workspace
       def repository_copy(uuid, repo_path)
         code_path = workspace(uuid, :code)
         Fission::Assets::Packer.unpack(object_store.get(repo_path), code_path)
       end
 
+      # Path to packager specific cookbooks for building that are
+      # vendored with the library
       def fission_cookbook_path
         unless(@cookbook_path)
-=begin
-# For now we need to use relative pathing since we are forcibly
-# loading paths when running via jar
-          spec = Gem::Specification.find_by_name(
-            'fission-package-builder',
-            Fission::PackageBuilder::VERSION.version
-          )
-          @cookbook_path = File.join(spec.full_gem_path, 'vendor/cookbooks')
-=end
           @cookbook_path = File.expand_path(File.join(File.dirname(__FILE__), '../../vendor/cookbooks'))
         end
         @cookbook_path
       end
 
+      # uuid:: unique id (message id)
+      # Writes the configuration file for chef
       def write_solo_config(uuid)
         solo_path = File.join(workspace(uuid, :solos), "solo.rb")
         unless(File.exists?(solo_path))
@@ -151,16 +170,28 @@ module Fission
         solo_path
       end
 
+      # uuid:: unique id (message id)
+      # Copies vendored cookbooks to local path for chef run. Returns
+      # path of copy
+      # NOTE: Cookbooks need to be copied to allow proper bind
+      # NOTE: This will be updated soon so containers have set
+      # readonly bind defined in base container so ephemerals will
+      # automatically have it available.
       def cookbook_copy(uuid)
         local_path = workspace(uuid, :cookbooks)
         directory_copy(fission_cookbook_path, local_path)
         local_path
       end
 
+      # Path to chef-solo
       def chef_exec_path
         Carnivore::Config.get(:fission, :package_builder, :chef_solo_path) || 'chef-solo'
       end
 
+      # source:: source directory
+      # target:: target directory
+      # Streaming file copy. This is to allow extracting files from a
+      # jar to the local FS without hitting weird encoding issues.
       def directory_copy(source, target)
         unless(File.directory?(target))
           FileUtils.mkdir_p(target)
