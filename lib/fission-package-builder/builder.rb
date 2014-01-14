@@ -16,6 +16,12 @@ module Fission
   module PackageBuilder
     class Builder < Fission::Callback
 
+      DEFAULT_ORIGIN = {
+        :name => 'Packager',
+        :email => 'notification@pacakger.co',
+        :site => 'packager.co'
+      }
+
       attr_reader :object_store
 
       def setup(*args)
@@ -41,10 +47,12 @@ module Fission
           chef_json = build_chef_json(config, payload, copy_path)
           start_build(payload[:message_id], chef_json)
           store_packages(payload)
+          set_notifications(config, payload)
           job_completed(:package_builder, payload, message)
-        rescue Fission::Error => e
-          error "Failure encountered: #{e.class}: #{e}"
+        rescue => e
+          error "Unexpected Failure encountered: #{e.class}: #{e}"
           debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
+          set_notifications(config, payload, :failed)
           failed(payload, message, e.message)
         end
       end
@@ -79,6 +87,7 @@ module Fission
             config[:build][:version] = Time.now.strftime('%Y%m%d%H%M%S')
           end
         end
+        params[:data][:package_builder][:name] = config[:name]
         params[:data][:package_builder][:version] = config[:build][:version]
         JSON.dump(
           :packager => {
@@ -220,6 +229,60 @@ module Fission
           end
         end
         true
+      end
+
+      # config:: Packager config
+      # payload:: Payload
+      # Set notification data in payload
+      def set_notifications(config, payload, failed = false)
+        set_mail_notifications(config, payload, failed)
+        set_github_notifications(config, payload, failed)
+      end
+
+      # Set payload data for github notifications
+      def set_github_notifications(config, payload, failed = false)
+        payload[:data][:github_status] = {
+          :state => failed ? :failed : :success
+        }
+      end
+
+      # Set payload data for mail type notifications
+      def set_mail_notifications(config, payload, failed = false)
+        pkg = payload[:data][:package_builder]
+        dest_email = config[:notify] ||
+          retrieve(payload, :data, :github, :repository, :owner, :email) ||
+          retrieve(payload, :data, :github, :pusher, :email)
+        notify = {
+          :destination => {
+            :email => dest_email
+          },
+          :origin => {
+            :email => origin[:email],
+            :name => origin[:name]
+          }
+        }
+        if(failed)
+          # TODO: Attach log files of failure (need to parse and
+          # extract actual failure)
+          notify.merge(
+            :subject => "[#{origin[:site]}] FAILED #{pkg[:name} build (version: #{pkg[:version]})",
+            :message => 'Package building attempt failed. Sad panda.',
+            :html => true
+          )
+        else
+          notify.merge(
+            :subject => "[#{origin[:site]}] New #{pkg[:name]} created (version: #{pkg[:version]})",
+            :message => "A new package has been built from the #{pkg_name} repository.<br/><br/>Release: #{pkg_name}-#{pkg_version}<br/>Details: #{release_endpoint}<br/>",
+            :html => true
+          )
+        end
+        payload[:data][:notification_email] = notify
+      end
+
+      # Return origin data for notifications
+      def origin
+        Carnivore::Config.get(:fission, :package_builder, :notifications, :origin) ||
+          DEFAULT_ORIGIN
       end
 
     end
