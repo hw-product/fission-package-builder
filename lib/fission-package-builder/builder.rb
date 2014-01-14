@@ -18,7 +18,7 @@ module Fission
 
       DEFAULT_ORIGIN = {
         :name => 'Packager',
-        :email => 'notification@pacakger.co',
+        :email => 'notifications@pacakger.co',
         :site => 'packager.co'
       }
 
@@ -87,7 +87,7 @@ module Fission
             config[:build][:version] = Time.now.strftime('%Y%m%d%H%M%S')
           end
         end
-        params[:data][:package_builder][:name] = config[:name]
+        params[:data][:package_builder][:name] = config[:build][:name] || retrieve(params, :data, :github, :repository, :name)
         params[:data][:package_builder][:version] = config[:build][:version]
         JSON.dump(
           :packager => {
@@ -252,6 +252,10 @@ module Fission
         dest_email = config[:notify] ||
           retrieve(payload, :data, :github, :repository, :owner, :email) ||
           retrieve(payload, :data, :github, :pusher, :email)
+        details = File.join(
+          payload[:data][:github][:repository][:url].sub('git:', 'https:').sub('.git', ''),
+          pkg[:version]
+        )
         notify = {
           :destination => {
             :email => dest_email
@@ -264,15 +268,15 @@ module Fission
         if(failed)
           # TODO: Attach log files of failure (need to parse and
           # extract actual failure)
-          notify.merge(
-            :subject => "[#{origin[:site]}] FAILED #{pkg[:name} build (version: #{pkg[:version]})",
+          notify.merge!(
+            :subject => "[#{origin[:site]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
             :message => 'Package building attempt failed. Sad panda.',
             :html => true
           )
         else
-          notify.merge(
+          notify.merge!(
             :subject => "[#{origin[:site]}] New #{pkg[:name]} created (version: #{pkg[:version]})",
-            :message => "A new package has been built from the #{pkg_name} repository.<br/><br/>Release: #{pkg_name}-#{pkg_version}<br/>Details: #{release_endpoint}<br/>",
+            :message => "A new package has been built from the #{pkg[:name]} repository.<br/><br/>Release: #{pkg[:name]}-#{pkg[:version]}<br/>Details: #{details}<br/>",
             :html => true
           )
         end
