@@ -16,12 +16,6 @@ module Fission
   module PackageBuilder
     class Builder < Fission::Callback
 
-      DEFAULT_ORIGIN = {
-        :name => 'Packager',
-        :email => 'notifications@pacakger.co',
-        :site => 'packager.co'
-      }
-
       attr_reader :object_store
 
       def setup(*args)
