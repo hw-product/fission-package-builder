@@ -263,13 +263,13 @@ module Fission
           # TODO: Attach log files of failure (need to parse and
           # extract actual failure)
           notify.merge!(
-            :subject => "[#{origin[:site]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
+            :subject => "[#{origin[:application]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
             :message => 'Package building attempt failed. Sad panda.',
             :html => true
           )
         else
           notify.merge!(
-            :subject => "[#{origin[:site]}] New #{pkg[:name]} created (version: #{pkg[:version]})",
+            :subject => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})",
             :message => "A new package has been built from the #{pkg[:name]} repository.<br/><br/>Release: #{pkg[:name]}-#{pkg[:version]}<br/>Details: #{details}<br/>",
             :html => true
           )
