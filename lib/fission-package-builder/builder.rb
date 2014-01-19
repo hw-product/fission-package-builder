@@ -39,7 +39,7 @@ module Fission
           copy_path = repository_copy(payload[:message_id], payload[:data][:repository][:path])
           config = load_config(copy_path)
           chef_json = build_chef_json(config, payload, copy_path)
-          start_build(payload[:message_id], chef_json)
+          start_build(payload[:message_id], chef_json, retrieve(config, :target, :platform))
           store_packages(payload)
           set_notifications(config, payload)
           job_completed(:package_builder, payload, message)
@@ -105,8 +105,9 @@ module Fission
 
       # uuid:: unique ID (message id)
       # json:: chef json
+      # base:: base container for ephemeral
       # Start the build
-      def start_build(uuid, json)
+      def start_build(uuid, json, base='ubuntu_1204')
         json_path = File.join(workspace(uuid, :first_runs), "#{uuid}.json")
         File.open(json_path, 'w') do |f|
           f.puts json
@@ -116,7 +117,7 @@ module Fission
         log_file.sync = true
         command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid)]
         ephemeral = Lxc::Ephemeral.new(
-          :original => 'ubuntu_1204',
+          :original => base,
           :bind => workspace(uuid),
           :ephemeral_command => command.join(' ')
         )
