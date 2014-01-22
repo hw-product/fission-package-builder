@@ -109,7 +109,7 @@ module Fission
       def build_chef_json(config, params, target_store)
         unless(config[:build][:version])
           if((ref = retrieve(params, :data, :github, :ref)).start_with?('refs/tags'))
-            config[:build][:version] = ref.sub('refs/tags', '')
+            config[:build][:version] = ref.sub('refs/tags/', '')
           else
             config[:build][:version] = Time.now.strftime('%Y%m%d%H%M%S')
           end
