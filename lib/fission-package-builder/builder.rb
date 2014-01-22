@@ -39,7 +39,8 @@ module Fission
           copy_path = repository_copy(payload[:message_id], payload[:data][:repository][:path])
           config = load_config(copy_path)
           chef_json = build_chef_json(config, payload, copy_path)
-          start_build(payload[:message_id], chef_json, retrieve(config, :target, :platform))
+          load_history_assets(config, payload)
+          start_build(payload[:message_id], chef_json, retrieve(config, :target))
           store_packages(payload)
           set_notifications(config, payload)
           job_completed(:package_builder, payload, message)
@@ -51,11 +52,43 @@ module Fission
         end
       end
 
+      # config:: packager config
+      # payload:: Payload
+      # Retrieve previous versions from asset store and add to history
+      def load_history_assets(config, payload)
+        if(versions = retrieve(config, :build, :history, :versions))
+          versions = [versions].flatten.compact.uniq
+          ext = retrieve(config, :target, :package)
+          versions.each do |version|
+            filename = "#{payload[:data][:package_builder][:name]}-#{version}.deb"
+            key = generate_key(payload, filename)
+            package = object_store.get(key)
+            File.open(history = File.join(workspace(payload[:message_id], :history), filename), 'wb') do |file|
+              while(bytes = package.read(2048))
+                file.write bytes
+              end
+            end
+            debug "Wrote history asset -> #{history}"
+          end
+        end
+      end
+
+      # payload:: payload
+      # file:: File name or path
+      # Generate the asset store key based on file and payload
+      def generate_key(payload, file)
+        key = [
+          'packages',
+          retrieve(payload, :data, :account, :name),
+          File.basename(file)
+        ].compact.join('_')
+      end
+
       # payload:: Payload
       # Store packages into private data store
       def store_packages(payload)
         keys = Dir.glob(File.join(workspace(payload[:message_id], :packages), '*')).map do |file|
-          key = "#{payload[:message_id]}_#{File.basename(file)}"
+          key = generate_key(payload, file)
           object_store.put(key, file)
           key
         end
@@ -89,6 +122,10 @@ module Fission
               :target_store => target_store
             ),
             :environment => {
+              'PACKAGER_HISTORY_DIR' => workspace(params[:message_id], :history),
+              'PACKAGER_NAME' => config[:build][:name],
+              'PACKAGER_INSTALL_PREFIX' => config[:build][:install_prefix],
+              'PACKAGER_TYPE' => config[:target][:package],
               'PACKAGER_VERSION' => config[:build][:version],
               'PACKAGER_COMMIT_SHA' => params[:data][:github][:after],
               'PACKAGER_PUSHER_NAME' => params[:data][:github][:pusher][:name],
@@ -107,7 +144,12 @@ module Fission
       # json:: chef json
       # base:: base container for ephemeral
       # Start the build
-      def start_build(uuid, json, base='ubuntu_1204')
+      def start_build(uuid, json, base={})
+        if(base[:platform])
+          base = "#{base[:platform]}_#{base.fetch(:version, '12.04').gsub('.', '')}"
+        else
+          base = 'ubuntu_1204'
+        end
         json_path = File.join(workspace(uuid, :first_runs), "#{uuid}.json")
         File.open(json_path, 'w') do |f|
           f.puts json
