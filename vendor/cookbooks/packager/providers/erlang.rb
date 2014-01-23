@@ -90,7 +90,7 @@ action :build do
 end
 
 def set_reload!(args)
-  args[:build][:name] = "#{args[:build][:name]}_#{args[:build][:reloader][:from]}-to"
+  args[:build][:version] = "#{args[:build][:version]}-upgrade#{args[:build][:reloader][:from]}"
   install_prefix = args[:build][:install_prefix] || ::File.join('/opt', args[:build][:name])
   gen_prefix = "cd #{args[:build][:generate_cwd]}" if args[:build][:generate_cwd]
   args[:build][:commands][:build] = [
@@ -144,6 +144,11 @@ def default_erlang_build!(args)
       args[:build][:reloader][:from] ||= latest
     else
       raise TypeError.new("Unable to process provided reloader type. Expecting Hash. Got: #{args[:build][:reloader].class}")
+    end
+    # Test that we have seed package in history
+    unless(::File.exists?(::File.join(node[:packager][:build][:history_directory], "#{args[:build][:name]}-#{args[:build][:reloader][:from]}.#{args[:target][:package]}")))
+      # TODO: Log here
+      args[:build][:reloader] = false
     end
   end
 end

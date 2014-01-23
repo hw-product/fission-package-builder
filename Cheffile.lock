@@ -14,7 +14,7 @@ SITE
       yum (~> 3.0)
       yum-epel (>= 0.0.0)
       yum-erlang_solutions (>= 0.0.0)
-    nginx (2.2.0)
+    nginx (2.2.2)
       apt (~> 2.2)
       bluepill (~> 2.3)
       build-essential (~> 1.4)
@@ -75,7 +75,7 @@ GIT
 GIT
   remote: git@github.com:heavywater/chef-packager.git
   ref: develop
-  sha: aec79c81e7f1531123d45cbb723990feafa87132
+  sha: b55755b6052cd316d1a98e995b92b9ade753ea37
   specs:
     packager (0.1.1)
       erlang (>= 0.0.0)
