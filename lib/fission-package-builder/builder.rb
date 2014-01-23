@@ -119,7 +119,8 @@ module Fission
         JSON.dump(
           :packager => {
             :build => config.merge(
-              :target_store => target_store
+              :target_store => target_store,
+              :history_directory => workspace(params[:message_id], :history)
             ),
             :environment => {
               'PACKAGER_HISTORY_DIR' => workspace(params[:message_id], :history),
