@@ -315,10 +315,6 @@ module Fission
         pkg = payload[:data][:package_builder]
         if(failed)
           payload[:data][:github_commit] = {
-            :message => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})"
-          }
-        else
-          payload[:data][:github_commit] = {
             :message => [
               "[#{origin[:application]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
               "Package building attempt failed!\n\nExtracted error message:\n",
@@ -327,6 +323,10 @@ module Fission
               "```",
               "- #{job_url(payload)}"
             ].join("\n")
+          }
+        else
+          payload[:data][:github_commit] = {
+            :message => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})"
           }
         end
       end

@@ -1,4 +1,4 @@
-require 'fission/errors'
+require 'fission/exceptions'
 
 module Fission
   class Error
