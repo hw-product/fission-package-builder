@@ -33,22 +33,21 @@ module Fission
       end
 
       def execute(message)
-        payload = unpack(message)
-        begin
-          payload[:data][:package_builder] = {}
-          copy_path = repository_copy(payload[:message_id], payload[:data][:repository][:path])
-          config = load_config(copy_path)
-          chef_json = build_chef_json(config, payload, copy_path)
-          load_history_assets(config, payload)
-          start_build(payload[:message_id], chef_json, retrieve(config, :target))
-          store_packages(payload)
-          set_notifications(config, payload)
-          job_completed(:package_builder, payload, message)
-        rescue => e
-          error "Unexpected Failure encountered: #{e.class}: #{e}"
-          debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
-          set_notifications(config, payload, :failed)
-          failed(payload, message, e.message)
+        failure_wrap(message) do |payload|
+          begin
+            payload[:data][:package_builder] = {}
+            copy_path = repository_copy(payload[:message_id], payload[:data][:repository][:path])
+            config = load_config(copy_path)
+            chef_json = build_chef_json(config, payload, copy_path)
+            load_history_assets(config, payload)
+            start_build(payload[:message_id], chef_json, retrieve(config, :target))
+            store_packages(payload)
+            set_notifications(config, payload)
+            job_completed(:package_builder, payload, message)
+          rescue Lxc::CommandFailed
+            set_notifications(config, payload, :failed)
+            failed(payload, message, e.message)
+          end
         end
       end
 
@@ -273,19 +272,67 @@ module Fission
       # payload:: Payload
       # Set notification data in payload
       def set_notifications(config, payload, failed = false)
-        set_mail_notifications(config, payload, failed)
-        set_github_notifications(config, payload, failed)
+        set_mail_notification(config, payload, failed)
+        set_github_status_notification(config, payload, failed)
+        set_github_comment_notification(config, payload, failed)
+      end
+
+      # payload:: Payload
+      # Attempt to extract error message from chef-stacktrace if file
+      # exists and error is findable
+      def extract_chef_stacktrace(payload)
+        path = File.join(workspace(payload[:message_id], :chef_cache), 'chef-stacktrace.out')
+        if(File.exists?(path))
+          debug "Found chef stacktrace file for error extraction (#{path})"
+          content = File.readlines(path)
+          start = content.index{|line| line.start_with?('ERROR')}
+          stop = content.index{|line| line.start_with?('Ran')}
+          if(start && stop)
+            error_msg = content.slice(start, stop - start + 1)
+            debug "Extracted error message: #{error_msg}"
+
+          end
+        else
+          debug "Failed to locate chef stacktrace file for error extraction (#{path})"
+        end
       end
 
       # Set payload data for github notifications
-      def set_github_notifications(config, payload, failed = false)
-        payload[:data][:github_status] = {
-          :state => failed ? :failed : :success
-        }
+      def set_github_status_notification(config, payload, failed = false)
+        if(failed)
+          payload[:data][:github_status] = {
+            :state => :failed,
+            :description => 'Package build failed',
+            :target_url => job_url(payload)
+          }
+        else
+          payload[:data][:github_status][:state] = :success
+        end
+      end
+
+      # Set payload data for github comment
+      def set_github_comment_notification(config, payload, failed = false)
+        pkg = payload[:data][:package_builder]
+        if(failed)
+          payload[:data][:github_commit] = {
+            :message => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})"
+          }
+        else
+          payload[:data][:github_commit] = {
+            :message => [
+              "[#{origin[:application]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
+              "Package building attempt failed!\n\nExtracted error message:\n",
+              "```",
+              "#{extract_chef_stacktrace(payload) || '<unavailable>'}\n",
+              "```",
+              "- #{job_url(payload)}"
+            ].join("\n")
+          }
+        end
       end
 
       # Set payload data for mail type notifications
-      def set_mail_notifications(config, payload, failed = false)
+      def set_mail_notification(config, payload, failed = false)
         pkg = payload[:data][:package_builder]
         dest_email = config[:notify] ||
           retrieve(payload, :data, :github, :repository, :owner, :email) ||
@@ -304,27 +351,20 @@ module Fission
           }
         }
         if(failed)
-          # TODO: Attach log files of failure (need to parse and
-          # extract actual failure)
+          error_message = extract_chef_stacktrace(payload)
           notify.merge!(
             :subject => "[#{origin[:application]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
-            :message => 'Package building attempt failed. Sad panda.',
-            :html => true
+            :message => "Package building attempt failed!\n\nExtracted error message:\n\n#{error_message || '<unavailable>'}\n\n- #{job_url(payload)}",
+            :html => false
           )
         else
           notify.merge!(
             :subject => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})",
-            :message => "A new package has been built from the #{pkg[:name]} repository.<br/><br/>Release: #{pkg[:name]}-#{pkg[:version]}<br/>Details: #{details}<br/>",
-            :html => true
+            :message => "A new package has been built from the #{pkg[:name]} repository.\n\nRelease: #{pkg[:name]}-#{pkg[:version]}\nDetails: #{details}\n",
+            :html => false
           )
         end
         payload[:data][:notification_email] = notify
-      end
-
-      # Return origin data for notifications
-      def origin
-        Carnivore::Config.get(:fission, :package_builder, :notifications, :origin) ||
-          DEFAULT_ORIGIN
       end
 
     end
