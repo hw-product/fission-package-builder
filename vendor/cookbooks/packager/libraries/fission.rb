@@ -1,13 +1,32 @@
 module Packager
 
+  class Smash < Mash
+
+    # keys:: Keys to walk into hash
+    # Return value at and of key path
+    def retrieve(*keys)
+      keys.inject(self) do |memo, key|
+        if(memo.has_key?(valid_key = key.to_s) || memo.has_key?(valid_key = key.to_sym))
+          memo[valid_key]
+        else
+          break
+        end
+      end
+    end
+
+  end
+
   class << self
+
     def to_hash(hash)
-      new_hash = Mash.new
+      new_hash = Smash.new
       hash.each do |k,v|
         new_hash[k] = v.is_a?(Hash) ? to_hash(v) : v
       end
       new_hash
     end
+    alias_method :to_smash, :to_hash
+
   end
 
   module Attribute
@@ -18,6 +37,7 @@ module Packager
       end
       new_hash
     end
+
   end
 
   module Reactor
@@ -42,7 +62,7 @@ module Packager
           raise TypeError.new('`reactor` expects block. No block provided!')
         else
           execute_resources_if_enabled!(:before, :dependencies)
-          if(new_resource.args[:dependencies][:build])
+          if(new_resource.args.retrieve(:dependencies, :build))
             new_resource.args[:dependencies][:build].each do |pkg_name, pkg_version|
               package pkg_name do
                 if(pkg_version)
@@ -75,7 +95,7 @@ module Packager
       end
 
       def execute_resources_if_enabled!(timing, location)
-        if(new_resource.args[:build][:commands] && new_resource.args[:build][:commands][timing] && new_resource.args[:build][:commands][timing][location])
+        if(new_resource.args.retrieve(:build, :commands, timing, location))
           unless(new_resource.send("disable_#{timing}").include?(location))
             new_resource.args[:build][:commands][timing][location].each do |com|
               case com

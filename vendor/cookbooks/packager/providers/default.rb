@@ -10,7 +10,7 @@ action :run do
   end
 
   dep_builder = lambda do |opts|
-    if(opts.has_key?(:dependencies) && opts[:dependencies][:package])
+    if(opts.retrieve(:dependencies, :package))
       opts[:dependencies][:package].each do |name, config|
         dep_builder.call(config)
       end
@@ -18,6 +18,6 @@ action :run do
     builder.call(opts)
   end
 
-  dep_builder.call(::Packager.to_hash(new_resource.build))
+  dep_builder.call(::Packager.to_smash(new_resource.build))
 
 end

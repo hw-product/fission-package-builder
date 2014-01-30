@@ -2,7 +2,7 @@ include ::Packager::Reactor::Core
 
 action :build do
 
-  args = new_resource.args
+  args = Packager::Smash.new(new_resource.args)
   args[:source] ||= {}
   default_erlang_build!(args)
 

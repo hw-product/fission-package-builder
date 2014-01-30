@@ -42,7 +42,7 @@ SITE
       yum-epel (>= 0.0.0)
     ssh_known_hosts (1.1.0)
       partial_search (>= 0.0.0)
-    yum (3.0.4)
+    yum (3.0.6)
     yum-epel (0.2.0)
       yum (~> 3.0)
     yum-erlang_solutions (0.1.4)
@@ -75,7 +75,7 @@ GIT
 GIT
   remote: git@github.com:heavywater/chef-packager.git
   ref: develop
-  sha: b55755b6052cd316d1a98e995b92b9ade753ea37
+  sha: a358ecef0b186fbf9e732477a009b6f7b93ad043
   specs:
     packager (0.1.1)
       erlang (>= 0.0.0)
