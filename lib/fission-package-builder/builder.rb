@@ -325,8 +325,8 @@ module Fission
             ].join("\n")
           }
         else
-          payload[:data][:github_commit] = {
-            :message => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})"
+          payload[:data][:github_comment] = {
+            :message => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})\n\n- #{job_url(payload)}"
           }
         end
       end
