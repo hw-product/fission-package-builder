@@ -13,13 +13,11 @@ module Fission
 
         def load(path)
           if(File.exists?(path))
-            Dir.chdir(File.dirname(path)) do
-              if(defined?(Sandbox))
-                Sandbox.eval(File.read(path))
-              else
-                PackageBuilder.class_eval do
-                  eval(File.read(path))
-                end
+            if(defined?(Sandbox))
+              Sandbox.eval(File.read(path))
+            else
+              PackageBuilder.class_eval do
+                eval(File.read(path))
               end
             end
           else
