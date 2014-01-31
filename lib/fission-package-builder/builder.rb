@@ -140,6 +140,16 @@ module Fission
         )
       end
 
+
+      def container(uuid, base={})
+        if(base[:platform])
+          base = "#{base[:platform]}_#{base.fetch(:version, '12.04').gsub('.', '')}"
+        else
+          base = 'ubuntu_1204'
+        end
+      end
+
+
       # uuid:: unique ID (message id)
       # json:: chef json
       # base:: base container for ephemeral
@@ -284,7 +294,9 @@ module Fission
         path = File.join(workspace(payload[:message_id], :chef_cache), 'chef-stacktrace.out')
         if(File.exists?(path))
           debug "Found chef stacktrace file for error extraction (#{path})"
-          content = File.readlines(path)
+          # TODO: Don't do this
+          # NOTE: doing this until we get log exports in place
+          content = %x{sudo cat #{path}}.split("\n")
           start = content.index{|line| line.start_with?('ERROR')}
           stop = content.index{|line| line.start_with?('Ran')}
           if(start && stop)
