@@ -94,20 +94,20 @@ def set_reload!(args)
   install_prefix = args[:build][:install_prefix] || ::File.join('/opt', args[:build][:name])
   gen_prefix = "cd #{args[:build][:generate_cwd]}" if args[:build][:generate_cwd]
   args[:build][:commands][:build] = [
-    "rm -rf rel/$PACKAGER_NAME*",
-    "mkdir -p rel/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
-    "mkdir -p /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
-    "dpkg-deb -x $PACKAGER_HISTORY_DIR/$PACKAGER_NAME-#{args[:build][:reloader][:from]}.$PACKAGER_TYPE /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
-    "cp -R /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}/$PACKAGER_INSTALL_PREFIX/* rel/$PACKAGER_NAME-#{args[:build][:reloader][:from]}/",
     'rebar delete-deps',
     'rebar clean',
     'rebar get-deps',
     'rebar compile',
     [gen_prefix, 'rebar generate'].compact.join(' && '),
+    "rm -rf rel/$PACKAGER_NAME*",
+    "mkdir -p rel/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
+    "mkdir -p /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
+    "dpkg-deb -x $PACKAGER_HISTORY_DIR/$PACKAGER_NAME-#{args[:build][:reloader][:from]}.$PACKAGER_TYPE /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
+    "cp -R /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}/$PACKAGER_INSTALL_PREFIX/* rel/$PACKAGER_NAME-#{args[:build][:reloader][:from]}/",
     [gen_prefix, "rebar generate-appups previous_release=$PACKAGER_NAME-#{args[:build][:reloader][:from]}"].compact.join(' && '),
     [gen_prefix, "rebar generate-upgrade previous_release=$PACKAGER_NAME-#{args[:build][:reloader][:from]}"].compact.join(' && '),
     "mkdir -p $PKG_DIR/#{install_prefix}",
-    "cp -R /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}/$PACKAGER_INSTALL_PREFIX/* $PKG_DIR/#{install_prefix}/",
+    "dpkg-deb -x $PACKAGER_HISTORY_DIR/$PACKAGER_NAME-#{args[:build][:reloader][:from]}.$PACKAGER_TYPE $PACKAGER_PKG_DIR",
     "tar -C $PKG_DIR/#{install_prefix} -zxf rel/${PACKAGER_NAME}_${PACKAGER_VERSION}.tar.gz"
   ]
 end
