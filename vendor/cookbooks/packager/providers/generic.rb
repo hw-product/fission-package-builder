@@ -1,7 +1,7 @@
 include ::Packager::Reactor::Core
 
 action :build do
-  args = Packager::Smash.new(new_resource.args)
+  args = Smash.new(new_resource.args)
   args[:source] ||= {}
   reactor do
     builder args[:build][:name] do

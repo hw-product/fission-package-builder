@@ -121,3 +121,5 @@ module Packager
     end
   end
 end
+
+Smash = ::Packager::Smash

@@ -2,7 +2,7 @@ include ::Packager::Reactor::Core
 
 action :build do
 
-  args = Packager::Smash.new(new_resource.args)
+  args = Smash.new(new_resource.args)
   args[:source] ||= {}
   default_erlang_build!(args)
 
@@ -62,26 +62,33 @@ action :build do
   end
 
   builds.each do |build_type|
-    set_reload!(args) if build_type == :reload
+
+    if(build_type == :reload)
+      set_reload!(args)
+      resource_name = "#{args[:build][:name]}_reloader"
+    else
+      resource_name = args[:build][:name]
+    end
 
     reactor do
-      builder args[:build][:name] do
+      builder resource_name do
         if(args[:target_store])
           init_command "cp -R #{::File.join(args[:target_store], '*')} ."
         end
         args[:source].each do |k,v|
           self.send(k,v)
         end
-        commands args[:build][:commands][:build]
-        environment node[:packager][:environment]
+        commands args[:build][:commands][:build].dup
+        environment node[:packager][:environment].dup
         creates '/tmp/always/be/building'
       end
 
-      fpm_tng_package args[:build][:name] do
+      fpm_tng_package resource_name do
+        package_name args[:build][:name]
         output_type args[:target][:package]
         depends args[:dependencies][:runtime] unless [args[:dependencies][:runtime]].flatten.compact.empty?
         version args[:build][:version]
-        chdir ::File.join(node[:builder][:packaging_dir], args[:build][:name])
+        chdir ::File.join(node[:builder][:packaging_dir], resource_name)
       end
     end
 
@@ -98,8 +105,8 @@ def set_reload!(args)
     'rebar clean',
     'rebar get-deps',
     'rebar compile',
-    [gen_prefix, 'rebar generate'].compact.join(' && '),
     "rm -rf rel/$PACKAGER_NAME*",
+    [gen_prefix, 'rebar generate'].compact.join(' && '),
     "mkdir -p rel/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
     "mkdir -p /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
     "dpkg-deb -x $PACKAGER_HISTORY_DIR/$PACKAGER_NAME-#{args[:build][:reloader][:from]}.$PACKAGER_TYPE /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}",
@@ -107,7 +114,7 @@ def set_reload!(args)
     [gen_prefix, "rebar generate-appups previous_release=$PACKAGER_NAME-#{args[:build][:reloader][:from]}"].compact.join(' && '),
     [gen_prefix, "rebar generate-upgrade previous_release=$PACKAGER_NAME-#{args[:build][:reloader][:from]}"].compact.join(' && '),
     "mkdir -p $PKG_DIR/#{install_prefix}",
-    "dpkg-deb -x $PACKAGER_HISTORY_DIR/$PACKAGER_NAME-#{args[:build][:reloader][:from]}.$PACKAGER_TYPE $PACKAGER_PKG_DIR",
+    "dpkg-deb -x $PACKAGER_HISTORY_DIR/$PACKAGER_NAME-#{args[:build][:reloader][:from]}.$PACKAGER_TYPE $PKG_DIR",
     "tar -C $PKG_DIR/#{install_prefix} -zxf rel/${PACKAGER_NAME}_${PACKAGER_VERSION}.tar.gz"
   ]
 end
