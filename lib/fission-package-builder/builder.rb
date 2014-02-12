@@ -44,7 +44,7 @@ module Fission
             store_packages(payload)
             set_notifications(config, payload)
             job_completed(:package_builder, payload, message)
-          rescue Lxc::CommandFailed
+          rescue Lxc::CommandFailed => e
             set_notifications(config, payload, :failed)
             failed(payload, message, e.message)
           end
