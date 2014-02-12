@@ -2,7 +2,7 @@ SITE
   remote: http://community.opscode.com/api/v1
   specs:
     apache2 (1.8.14)
-    apt (2.3.4)
+    apt (2.3.6)
     bluepill (2.3.1)
       rsyslog (>= 0.0.0)
     build-essential (1.4.2)
@@ -75,7 +75,7 @@ GIT
 GIT
   remote: git@github.com:heavywater/chef-packager.git
   ref: develop
-  sha: ba64b987e8b97a6c5247d3e264c1d3e66d625489
+  sha: 41cfba5af33d202a52944edf3b7596552075a841
   specs:
     packager (0.1.1)
       erlang (>= 0.0.0)

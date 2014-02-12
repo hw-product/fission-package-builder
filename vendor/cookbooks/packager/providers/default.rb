@@ -12,7 +12,8 @@ action :run do
   dep_builder = lambda do |opts|
     if(opts.retrieve(:dependencies, :package))
       opts[:dependencies][:package].each do |name, config|
-        dep_builder.call(config)
+        dep_config = config.merge(:target => opts[:target])
+        dep_builder.call(dep_config)
       end
     end
     builder.call(opts)
