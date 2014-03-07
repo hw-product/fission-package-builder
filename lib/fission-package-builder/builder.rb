@@ -19,7 +19,9 @@ module Fission
       attr_reader :object_store
 
       def setup(*args)
-        @object_store = Fission::Assets::Store.new
+        @object_store = Fission::Assets::Store.new(
+          :bucket => Carnivore::Config.get(:fission, :package_builder, :storage_bucket)
+        )
         if(RUBY_PLATFORM == 'java')
 #          require 'fission-package-builder/sandbox'
         end
@@ -41,7 +43,7 @@ module Fission
             chef_json = build_chef_json(config, payload, copy_path)
             load_history_assets(config, payload)
             start_build(payload[:message_id], chef_json, retrieve(config, :target))
-            store_packages(payload)
+            store_packages(payload, retrieve(config, :target))
             set_notifications(config, payload)
             job_completed(:package_builder, payload, message)
           rescue Lxc::CommandFailed => e
@@ -61,13 +63,17 @@ module Fission
           versions.each do |version|
             filename = "#{payload[:data][:package_builder][:name]}-#{version}.deb"
             key = generate_key(payload, filename)
-            package = object_store.get(key)
-            File.open(history = File.join(workspace(payload[:message_id], :history), filename), 'wb') do |file|
-              while(bytes = package.read(2048))
-                file.write bytes
+            begin
+              package = object_store.get(key)
+              File.open(history = File.join(workspace(payload[:message_id], :history), filename), 'wb') do |file|
+                while(bytes = package.read(2048))
+                  file.write bytes
+                end
               end
+              info "Wrote history asset -> #{history}"
+            rescue Fission::Assets::Error::NotFound => e
+              warn "Failed to load historical package asset: #{e}"
             end
-            debug "Wrote history asset -> #{history}"
           end
         end
       end
@@ -80,18 +86,27 @@ module Fission
           'packages',
           retrieve(payload, :data, :account, :name),
           File.basename(file)
-        ].compact.join('_')
+        ].compact.join('/')
       end
 
       # payload:: Payload
+      # target:: Target description hash
       # Store packages into private data store
-      def store_packages(payload)
+      def store_packages(payload, target)
         keys = Dir.glob(File.join(workspace(payload[:message_id], :packages), '*')).map do |file|
           key = generate_key(payload, file)
           object_store.put(key, file)
+          File.delete(file)
           key
         end
-        payload[:data][:package_builder][:keys] = keys
+        payload[:data][:package_builder][:keys] ||= []
+        payload[:data][:package_builder][:categorized] ||= {}
+        payload[:data][:package_builder][:keys] += keys
+        payload[:data][:package_builder][:categorized].merge!(
+          target[:platform] => {
+            target[:version] => keys
+          }
+        )
         true
       end
 
@@ -140,7 +155,9 @@ module Fission
         )
       end
 
-
+      # uuid:: unique ID (message id)
+      # base:: Information hash of platform information
+      # Return proper container name to build against
       def container(uuid, base={})
         if(base[:platform])
           base = "#{base[:platform]}_#{base.fetch(:version, '12.04').gsub('.', '')}"
@@ -148,7 +165,6 @@ module Fission
           base = 'ubuntu_1204'
         end
       end
-
 
       # uuid:: unique ID (message id)
       # json:: chef json
@@ -177,6 +193,7 @@ module Fission
           ephemeral.start!
         rescue Lxc::CommandFailed => e
           error "Package build failed: #{e.result.stderr}"
+          debug "Packaging error: #{e.inspect}"
           raise e
         end
         debug "Finished command: #{command.join(' ')}"
