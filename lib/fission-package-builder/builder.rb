@@ -362,6 +362,7 @@ module Fission
 
       # Set payload data for mail type notifications
       def set_mail_notification(config, payload, failed = false)
+        config ||= {}
         pkg = payload[:data][:package_builder]
         dest_email = config[:notify] ||
           retrieve(payload, :data, :github, :repository, :owner, :email) ||
