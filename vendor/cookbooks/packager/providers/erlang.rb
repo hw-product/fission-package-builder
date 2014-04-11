@@ -113,6 +113,7 @@ def set_reload!(args)
     "cp -R /tmp/$PACKAGER_NAME-#{args[:build][:reloader][:from]}/$PACKAGER_INSTALL_PREFIX/* rel/$PACKAGER_NAME-#{args[:build][:reloader][:from]}/",
     [gen_prefix, "rebar generate-appups previous_release=$PACKAGER_NAME-#{args[:build][:reloader][:from]}"].compact.join(' && '),
     [gen_prefix, "rebar generate-upgrade previous_release=$PACKAGER_NAME-#{args[:build][:reloader][:from]}"].compact.join(' && '),
+    "chmod -f 755 rel/$PACKAGER_NAME/bin/*",
     "mkdir -p $PKG_DIR/#{install_prefix}",
     "dpkg-deb -x $PACKAGER_HISTORY_DIR/$PACKAGER_NAME-#{args[:build][:reloader][:from]}.$PACKAGER_TYPE $PKG_DIR",
     "tar -C $PKG_DIR/#{install_prefix} -zxf rel/${PACKAGER_NAME}_${PACKAGER_VERSION}.tar.gz"
@@ -132,6 +133,7 @@ def default_erlang_build!(args)
       'rebar get-deps',
       'rebar compile',
       [gen_prefix, 'rebar generate'].compact.join(' && '),
+      "chmod -f 755 rel/$PACKAGER_NAME/bin/*",
       "mkdir -p $PKG_DIR/#{install_prefix}",
       "mv rel/$PACKAGER_NAME/* $PKG_DIR/#{install_prefix}/"
     ]
