@@ -3,6 +3,8 @@ require 'fission/validators/validate'
 require 'fission/validators/repository'
 require 'fission-package-builder/errors'
 require 'fission-package-builder/packager'
+require 'fission-package-builder/validators/repository'
+require 'fission-package-builder/validators/validate'
 
 require 'fission-assets'
 require 'fission-assets/packer'
@@ -401,6 +403,4 @@ module Fission
   end
 end
 
-Fission.register(:package_builder, :validators, Fission::Validators::Validate)
-Fission.register(:package_builder, :validators, Fission::Validators::Repository)
 Fission.register(:package_builder, :builder, Fission::PackageBuilder::Builder)
