@@ -32,20 +32,20 @@ module Fission
       # Only build if we have an account set and repository available
       def valid?(message)
         super do |m|
-          retrieve(m, :data, :account) && retrieve(m, :data, :repository)
+          m.retrieve(:data, :account) && m.retrieve(:data, :repository)
         end
       end
 
       def execute(message)
         failure_wrap(message) do |payload|
           begin
-            payload[:data][:package_builder] = {}
-            copy_path = repository_copy(payload[:message_id], payload[:data][:repository][:path])
+            payload.set(:data, :package_builder, {})
+            copy_path = repository_copy(payload[:message_id], payload.retrieve(:data, :repository, :path))
             config = load_config(copy_path)
             chef_json = build_chef_json(config, payload, copy_path)
             load_history_assets(config, payload)
-            start_build(payload[:message_id], chef_json, retrieve(config, :target))
-            store_packages(payload, retrieve(config, :target))
+            start_build(payload[:message_id], chef_json, config[:target])
+            store_packages(payload, config[:target])
             set_notifications(config, payload)
             job_completed(:package_builder, payload, message)
           rescue Lxc::CommandFailed => e
@@ -59,9 +59,9 @@ module Fission
       # payload:: Payload
       # Retrieve previous versions from asset store and add to history
       def load_history_assets(config, payload)
-        if(versions = retrieve(config, :build, :history, :versions))
+        if(versions = config.retrieve(:build, :history, :versions))
           versions = [versions].flatten.compact.uniq
-          ext = retrieve(config, :target, :package)
+          ext = config.retrieve(:target, :package)
           versions.each do |version|
             filename = "#{payload[:data][:package_builder][:name]}-#{version}.deb"
             key = generate_key(payload, filename)
@@ -371,7 +371,7 @@ module Fission
           retrieve(payload, :data, :github, :pusher, :email)
         details = File.join(
           payload[:data][:github][:repository][:url].sub('git:', 'https:').sub('.git', ''),
-          pkg[:version]
+          pkg[:version].to_s
         )
         notify = {
           :destination => {
