@@ -59,7 +59,7 @@ module Fission
                 result.stdout.strip
               )
             )
-            result = MultiJson.load(content, :symbolize_keys => true)
+            result = Smash.new(MultiJson.load(content))
           ensure
             ephemeral.cleanup
           end
@@ -68,7 +68,7 @@ module Fission
 
         def json_load(path)
           begin
-            MultiJson.load(File.read(path), :symbolize_keys => true)
+            Smash.new(MultiJson.load(File.read(path)))
           rescue MultiJson::LoadError
             nil
           end
