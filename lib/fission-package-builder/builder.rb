@@ -38,6 +38,7 @@ module Fission
 
       def execute(message)
         failure_wrap(message) do |payload|
+          format_payload(payload, :repository)
           begin
             payload.set(:data, :package_builder, {})
             copy_path = repository_copy(payload[:message_id], payload.retrieve(:data, :repository, :path))
@@ -124,13 +125,13 @@ module Fission
       # Build the JSON for our chef run
       def build_chef_json(config, params, target_store)
         unless(config[:build][:version])
-          if((ref = retrieve(params, :data, :github, :ref)).start_with?('refs/tags'))
-            config[:build][:version] = ref.sub('refs/tags/', '')
+          if(params.get(:data, :format, :repository, :tag))
+            config[:build][:version] = params.get(:data, :format, :repository, :ref).sub('refs/tags/', '')
           else
             config[:build][:version] = Time.now.strftime('%Y%m%d%H%M%S')
           end
         end
-        params[:data][:package_builder][:name] = config[:build][:name] || retrieve(params, :data, :github, :repository, :name)
+        params[:data][:package_builder][:name] = config[:build][:name] || params.get(:data, :format, :repository, :name)
         params[:data][:package_builder][:version] = config[:build][:version]
         JSON.dump(
           :packager => {
@@ -144,9 +145,9 @@ module Fission
               'PACKAGER_INSTALL_PREFIX' => config[:build][:install_prefix],
               'PACKAGER_TYPE' => config[:target][:package],
               'PACKAGER_VERSION' => config[:build][:version],
-              'PACKAGER_COMMIT_SHA' => params[:data][:github][:after],
-              'PACKAGER_PUSHER_NAME' => params[:data][:github][:pusher][:name],
-              'PACKAGER_PUSHER_EMAIL' => params[:data][:github][:pusher][:email]
+              'PACKAGER_COMMIT_SHA' => params.get(:data, :format, :repository, :commit_sha),
+              'PACKAGER_PUSHER_NAME' => params.get(:data, :format, :repository, :user_name),
+              'PACKAGER_PUSHER_EMAIL' => params.get(:data, :format, :repository, :user_email)
             }
           },
           :fpm_tng => {
@@ -367,10 +368,10 @@ module Fission
         config ||= {}
         pkg = payload[:data][:package_builder]
         dest_email = config[:notify] ||
-          retrieve(payload, :data, :github, :repository, :owner, :email) ||
-          retrieve(payload, :data, :github, :pusher, :email)
+          payload.get(:data, :format, :repository, :owner_email) ||
+          payload.get(:data, :format, :repository, :user_email)
         details = File.join(
-          payload[:data][:github][:repository][:url].sub('git:', 'https:').sub('.git', ''),
+          payload.get(:data, :format, :repository, :url),
           pkg[:version].to_s
         )
         notify = {
