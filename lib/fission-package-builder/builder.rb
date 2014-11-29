@@ -322,7 +322,10 @@ module Fission
           if(start && stop)
             error_msg = content.slice(start, stop - start + 1)
             debug "Extracted error message: #{error_msg}"
-
+            error_msg
+          else
+            debug "Chef stacktrace content: #{content}"
+            nil
           end
         else
           debug "Failed to locate chef stacktrace file for error extraction (#{path})"
