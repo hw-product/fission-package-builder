@@ -14,5 +14,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'attribute_struct'
   s.add_dependency 'elecksee'
   s.add_dependency 'childprocess'
-  s.files = Dir['**/*']
+  s.files = Dir['{lib}/**/**/*'] + %w(fission-package-builder.gemspec README.md CHANGELOG.md)
 end
