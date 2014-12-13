@@ -335,13 +335,14 @@ module Fission
       # Set payload data for github notifications
       def set_github_status_notification(config, payload, failed = false)
         if(failed)
-          payload[:data][:github_status] = {
-            :state => :failed,
-            :description => 'Package build failed',
-            :target_url => job_url(payload)
-          }
+          payload[:data].set(:github_status, {
+              :state => :failed,
+              :description => 'Package build failed',
+              :target_url => job_url(payload)
+            }
+          )
         else
-          payload[:data][:github_status][:state] = :success
+          payload.set(:data, :github_status, :state, :success)
         end
       end
 
