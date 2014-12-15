@@ -39,7 +39,7 @@ module Fission
       def execute(message)
         failure_wrap(message) do |payload|
           format_payload(payload, :repository)
-          keepalive = every(10){ message.touch }
+          keepalive = every(10){ message.touch! }
           begin
             payload.set(:data, :package_builder, {})
             copy_path = repository_copy(payload[:message_id], payload.retrieve(:data, :repository, :path))
