@@ -40,17 +40,24 @@ module Fission
         failure_wrap(message) do |payload|
           format_payload(payload, :repository)
           keepalive = every(10){ message.touch! }
+          payload.set(:data, :package_builder, {})
+          copy_path = repository_copy(payload[:message_id], payload.retrieve(:data, :repository, :path))
+          base_config = load_config(copy_path)
+          if(base_config[:target])
+            base_config = Smash.new(
+              :default => base_config
+            )
+          end
           begin
-            payload.set(:data, :package_builder, {})
-            copy_path = repository_copy(payload[:message_id], payload.retrieve(:data, :repository, :path))
-            config = load_config(copy_path)
-            chef_json = build_chef_json(config, payload, copy_path)
-            load_history_assets(config, payload)
-            start_build(payload[:message_id], chef_json, config[:target])
-            store_packages(payload, config[:target])
+            base_config.each do |key, config|
+              info "Starting build for <#{key}> on #{message}"
+              chef_json = build_chef_json(config, payload, copy_path)
+              load_history_assets(config, payload)
+              start_build(payload[:message_id], chef_json, config[:target])
+              store_packages(payload, config[:target])
+            end
             job_completed(:package_builder, payload, message)
           rescue Lxc::CommandFailed => e
-            set_notifications(config, payload, :failed)
             failed(payload, message, e.message)
           ensure
             keepalive.cancel
