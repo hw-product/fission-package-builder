@@ -48,7 +48,6 @@ module Fission
             load_history_assets(config, payload)
             start_build(payload[:message_id], chef_json, config[:target])
             store_packages(payload, config[:target])
-            set_notifications(config, payload)
             job_completed(:package_builder, payload, message)
           rescue Lxc::CommandFailed => e
             set_notifications(config, payload, :failed)
@@ -301,15 +300,6 @@ module Fission
         true
       end
 
-      # config:: Packager config
-      # payload:: Payload
-      # Set notification data in payload
-      def set_notifications(config, payload, failed = false)
-        set_mail_notification(config, payload, failed)
-        set_github_status_notification(config, payload, failed)
-        set_github_comment_notification(config, payload, failed)
-      end
-
       # payload:: Payload
       # Attempt to extract error message from chef-stacktrace if file
       # exists and error is findable
@@ -333,78 +323,6 @@ module Fission
         else
           debug "Failed to locate chef stacktrace file for error extraction (#{path})"
         end
-      end
-
-      # Set payload data for github notifications
-      def set_github_status_notification(config, payload, failed = false)
-        if(failed)
-          payload[:data].set(:github_status, {
-              :state => :failed,
-              :description => 'Package build failed',
-              :target_url => job_url(payload)
-            }
-          )
-        else
-          payload.set(:data, :github_status, :state, :success)
-        end
-      end
-
-      # Set payload data for github comment
-      def set_github_comment_notification(config, payload, failed = false)
-        pkg = payload[:data][:package_builder]
-        if(failed)
-          payload[:data][:github_commit] = {
-            :message => [
-              "[#{origin[:application]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
-              "Package building attempt failed!\n\nExtracted error message:\n",
-              "```",
-              "#{extract_chef_stacktrace(payload) || '<unavailable>'}\n",
-              "```",
-              "- #{job_url(payload)}"
-            ].join("\n")
-          }
-        else
-          payload[:data][:github_comment] = {
-            :message => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})\n\n- #{job_url(payload)}"
-          }
-        end
-      end
-
-      # Set payload data for mail type notifications
-      def set_mail_notification(config, payload, failed = false)
-        config ||= {}
-        pkg = payload[:data][:package_builder]
-        dest_email = config[:notify] ||
-          payload.get(:data, :format, :repository, :owner_email) ||
-          payload.get(:data, :format, :repository, :user_email)
-        details = File.join(
-          payload.get(:data, :format, :repository, :url),
-          pkg[:version].to_s
-        )
-        notify = {
-          :destination => {
-            :email => dest_email
-          },
-          :origin => {
-            :email => origin[:email],
-            :name => origin[:name]
-          }
-        }
-        if(failed)
-          error_message = extract_chef_stacktrace(payload)
-          notify.merge!(
-            :subject => "[#{origin[:application]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
-            :message => "Package building attempt failed!\n\nExtracted error message:\n\n#{error_message || '<unavailable>'}\n\n- #{job_url(payload)}",
-            :html => false
-          )
-        else
-          notify.merge!(
-            :subject => "[#{origin[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})",
-            :message => "A new package has been built from the #{pkg[:name]} repository.\n\nRelease: #{pkg[:name]}-#{pkg[:version]}\nDetails: #{details}\n",
-            :html => false
-          )
-        end
-        payload[:data][:notification_email] = notify
       end
 
     end
