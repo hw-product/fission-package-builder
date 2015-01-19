@@ -5,7 +5,7 @@ require 'fission-package-builder/errors'
 require 'fission-package-builder/packager'
 require 'fission-package-builder/validators/repository'
 require 'fission-package-builder/validators/validate'
-
+require 'fission-package-builder/formatter'
 require 'fission-assets'
 require 'fission-assets/packer'
 
