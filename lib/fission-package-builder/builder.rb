@@ -14,47 +14,43 @@ module Fission
   module PackageBuilder
     class Builder < Fission::Callback
 
-      attr_reader :object_store
-
-      def setup(*args)
-        @object_store = Fission::Assets::Store.new(
-          :bucket => Carnivore::Config.get(:fission, :package_builder, :storage_bucket)
-        )
-        if(RUBY_PLATFORM == 'java')
-#          require 'fission-package-builder/sandbox'
-        end
-      end
-
-      # Only build if we have an account set and repository available
+      # Validity of message for processing
+      #
+      # @return [Truthy, Falsey]
       def valid?(message)
-        super do |m|
-          m.retrieve(:data, :account) && m.retrieve(:data, :repository)
+        super do |payload|
+          payload.get(:data, :code_fetcher, :asset)
         end
       end
 
+      # Build new packages!
+      #
+      # @param message [Carnivore::Message]
       def execute(message)
         failure_wrap(message) do |payload|
-          format_payload(payload, :repository)
           keepalive = every(10){ message.touch! }
-          payload.set(:data, :package_builder, {})
-          copy_path = repository_copy(payload[:message_id], payload.retrieve(:data, :repository, :path))
-          base_config = load_config(copy_path)
-          if(base_config[:target])
-            base_config = Smash.new(
-              :default => base_config
-            )
-          end
           begin
-            base_config.each do |key, config|
-              info "Starting build for <#{key}> on #{message}"
-              chef_json = build_chef_json(config, payload, copy_path)
-              load_history_assets(config, payload)
-              start_build(payload[:message_id], chef_json, config[:target])
-              store_packages(payload, config[:target])
+            payload.set(:data, :package_builder, {})
+            copy_path = repository_copy(payload[:message_id], payload.get(:data, :code_fetcher, :asset)) # NOTE: make formatter
+            base_config = load_config(copy_path)
+            if(base_config[:target])
+              base_config = Smash.new(
+                :default => base_config
+              )
             end
-            job_completed(:package_builder, payload, message)
-          rescue Lxc::CommandFailed => e
-            failed(payload, message, e.message)
+            begin
+              base_config.each do |key, config|
+                next if config.nil? || config.empty?
+                info "Starting build for <#{key}> on #{message}"
+                chef_json = build_chef_json(config, payload, copy_path)
+                load_history_assets(config, payload)
+                start_build(payload[:message_id], chef_json, config[:target])
+                store_packages(payload, config[:target])
+              end
+              job_completed(:package_builder, payload, message)
+            rescue Lxc::CommandFailed => e
+              failed(payload, message, e.message)
+            end
           ensure
             keepalive.cancel
           end
@@ -72,7 +68,7 @@ module Fission
             filename = "#{payload[:data][:package_builder][:name]}-#{version}.deb"
             key = generate_key(payload, filename)
             begin
-              package = object_store.get(key)
+              package = asset_store.get(key)
               File.open(history = File.join(workspace(payload[:message_id], :history), filename), 'wb') do |file|
                 while(bytes = package.read(2048))
                   file.write bytes
@@ -103,7 +99,7 @@ module Fission
       def store_packages(payload, target)
         keys = Dir.glob(File.join(workspace(payload[:message_id], :packages), '*')).map do |file|
           key = generate_key(payload, file)
-          object_store.put(key, File.open(file, 'rb'))
+          asset_store.put(key, File.open(file, 'rb'))
           File.delete(file)
           key
         end
@@ -224,7 +220,7 @@ module Fission
       # Unpacks repository into `code` workspace
       def repository_copy(uuid, repo_path)
         code_path = workspace(uuid, :code)
-        Fission::Assets::Packer.unpack(object_store.get(repo_path), code_path)
+        asset_store.unpack(asset_store.get(repo_path), code_path)
       end
 
       # Path to packager specific cookbooks for building that are
