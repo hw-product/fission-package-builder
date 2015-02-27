@@ -1,10 +1,6 @@
 require 'fission/callback'
-require 'fission/validators/validate'
-require 'fission/validators/repository'
 require 'fission-package-builder/errors'
 require 'fission-package-builder/packager'
-require 'fission-package-builder/validators/repository'
-require 'fission-package-builder/validators/validate'
 require 'fission-package-builder/formatter'
 require 'fission-assets'
 require 'fission-assets/packer'
@@ -107,7 +103,7 @@ module Fission
       def store_packages(payload, target)
         keys = Dir.glob(File.join(workspace(payload[:message_id], :packages), '*')).map do |file|
           key = generate_key(payload, file)
-          object_store.put(key, file)
+          object_store.put(key, File.open(file, 'rb'))
           File.delete(file)
           key
         end
