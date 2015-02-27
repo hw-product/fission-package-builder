@@ -4,7 +4,7 @@ module Fission
   module PackageBuilder
     module Formatters
 
-      class GithubComment < Fission::PayloadFormatter
+      class GithubComment < Fission::Formatter
 
         SOURCE = :package_builder
         DESTINATION = :github_comment

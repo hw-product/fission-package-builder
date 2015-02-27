@@ -4,7 +4,7 @@ module Fission
   module PackageBuilder
     module Formatters
 
-      class GithubStatus < Fission::PayloadFormatter
+      class GithubStatus < Fission::Formatter
 
         SOURCE = :package_builder
         DESTINATION = :github_status

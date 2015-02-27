@@ -4,7 +4,7 @@ module Fission
   module PackageBuilder
     module Formatters
 
-      class Mail < Fission::PayloadFormatter
+      class Mail < Fission::Formatter
 
         SOURCE = :package_builder
         DESTINATION = :mail

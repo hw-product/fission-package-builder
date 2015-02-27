@@ -4,7 +4,7 @@ module Fission
   module PackageBuilder
     module Formatters
 
-      class SlackNotification < Fission::PayloadFormatter
+      class SlackNotification < Fission::Formatter
 
         SOURCE = :package_builder
         DESTINATION = :slack_notification
