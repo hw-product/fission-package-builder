@@ -4,10 +4,10 @@ module Fission
   module PackageBuilder
     module Formatters
 
-      class SlackNotification < Fission::Formatter
+      class Slack < Fission::Formatter
 
         SOURCE = :package_builder
-        DESTINATION = :slack_notification
+        DESTINATION = :slack
 
         def format(payload)
           pkg = payload[:data][:package_builder]
