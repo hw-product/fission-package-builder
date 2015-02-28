@@ -8,7 +8,7 @@ require 'fission-assets/packer'
 require 'elecksee/ephemeral'
 
 Lxc.use_sudo = true
-Lxc.shellout_helper = :childprocess #:mixlib_shellout
+Lxc.shellout_helper = :childprocess
 
 module Fission
   module PackageBuilder
@@ -19,7 +19,7 @@ module Fission
       # @return [Truthy, Falsey]
       def valid?(message)
         super do |payload|
-          payload.get(:data, :code_fetcher, :asset)
+          payload.get(:data, :package_builder, :code_asset)
         end
       end
 
@@ -31,8 +31,8 @@ module Fission
           keepalive = every(10){ message.touch! }
           begin
             payload.set(:data, :package_builder, {})
-            copy_path = repository_copy(payload[:message_id], payload.get(:data, :code_fetcher, :asset)) # NOTE: make formatter
-            base_config = Smash.new #load_config(copy_path)
+            copy_path = repository_copy(payload[:message_id], payload.get(:data, :package_builder, :code_asset))
+            base_config = load_config(copy_path)
             if(base_config[:target])
               base_config = Smash.new(
                 :default => base_config
@@ -44,8 +44,8 @@ module Fission
                 info "Starting build for <#{key}> on #{message}"
                 chef_json = build_chef_json(config, payload, copy_path)
                 load_history_assets(config, payload)
-                # start_build(payload[:message_id], chef_json, config[:target])
-                # store_packages(payload, config[:target])
+                start_build(payload[:message_id], chef_json, config[:target])
+                store_packages(payload, config[:target])
               end
               job_completed(:package_builder, payload, message)
             rescue Lxc::CommandFailed => e
