@@ -11,14 +11,25 @@ module Fission
 
         def format(payload)
           if(payload[:status].to_s == 'error')
-            payload[:data].set(:github_status, {
+            payload.set(
+              :data, :github_kit, :status, Smash.new(
+                :repository => payload.get(:data, :code_fetcher, :info, :name),
+                :reference => payload.get(:data, :code_fetcher, :info, :commit_sha),
                 :state => :failed,
-                :description => 'Package build failed',
-                :target_url => job_url(payload)
-              }
+                :extras => {
+                  :description => 'Package build failed!',
+                  :target_url => job_url(payload)
+                }
+              )
             )
           else
-            payload.set(:data, :github_status, :state, :success)
+            payload.set(
+              :data, :github_kit, :status, Smash.new(
+                :repository => payload.get(:data, :code_fetcher, :info, :name),
+                :reference => payload.get(:data, :code_fetcher, :info, :commit_sha),
+                :state => :success
+              )
+            )
           end
         end
 
