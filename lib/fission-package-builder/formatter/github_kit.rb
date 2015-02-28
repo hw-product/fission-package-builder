@@ -4,18 +4,25 @@ module Fission
   module PackageBuilder
     module Formatters
 
-      class GithubComment < Fission::Formatter
+      # Formatter for github kit
+      class GithubKit < Fission::Formatter
 
         SOURCE = :package_builder
         DESTINATION = :github_kit
 
+        # Format payload and add information for commit comment
+        #
+        # @param payload [Smash]
         def format(payload)
           pkg = payload[:data][:package_builder]
           origin_info = origin(payload[:brand])
           if(payload[:status].to_s == 'error')
             payload.set(
               :data, :github_kit, :commit_comment, Smash.new(
-                :respository => payload.get(:data, :code_fetcher, :info, :name),
+                :repository => [
+                  payload.get(:data, :code_fetcher, :info, :owner),
+                  payload.get(:data, :code_fetcher, :info, :name)
+                ].join('/'),
                 :reference => payload.get(:data, :code_fetcher, :info, :commit_sha),
                 :message => [
                   "[#{origin_info[:application]}] FAILED #{pkg[:name]} build (version: #{pkg[:version]})",
@@ -30,7 +37,10 @@ module Fission
           else
             payload.set(
               :data, :github_kit, :commit_comment, Smash.new(
-                :respository => payload.get(:data, :code_fetcher, :info, :name),
+                :repository => [
+                  payload.get(:data, :code_fetcher, :info, :owner),
+                  payload.get(:data, :code_fetcher, :info, :name)
+                ].join('/'),
                 :reference => payload.get(:data, :code_fetcher, :info, :commit_sha),
                 :message => "[#{origin_info[:application]}] New #{pkg[:name]} created (version: #{pkg[:version]})\n\n- #{job_url(payload)}"
               )
