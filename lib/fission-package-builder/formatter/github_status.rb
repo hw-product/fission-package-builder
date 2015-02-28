@@ -7,7 +7,7 @@ module Fission
       class GithubStatus < Fission::Formatter
 
         SOURCE = :package_builder
-        DESTINATION = :github_status
+        DESTINATION = :github_kit
 
         def format(payload)
           if(payload[:status].to_s == 'error')

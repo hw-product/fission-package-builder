@@ -32,7 +32,7 @@ module Fission
           begin
             payload.set(:data, :package_builder, {})
             copy_path = repository_copy(payload[:message_id], payload.get(:data, :code_fetcher, :asset)) # NOTE: make formatter
-            base_config = load_config(copy_path)
+            base_config = Smash.new #load_config(copy_path)
             if(base_config[:target])
               base_config = Smash.new(
                 :default => base_config
@@ -44,8 +44,8 @@ module Fission
                 info "Starting build for <#{key}> on #{message}"
                 chef_json = build_chef_json(config, payload, copy_path)
                 load_history_assets(config, payload)
-                start_build(payload[:message_id], chef_json, config[:target])
-                store_packages(payload, config[:target])
+                # start_build(payload[:message_id], chef_json, config[:target])
+                # store_packages(payload, config[:target])
               end
               job_completed(:package_builder, payload, message)
             rescue Lxc::CommandFailed => e
