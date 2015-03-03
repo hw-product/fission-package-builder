@@ -5,7 +5,7 @@ module Fission
     module Formatters
 
       # Format payload using contents provided via code fetcher
-      class GithubKit < Fission::Formatter
+      class CodeFetcher < Fission::Formatter
 
         SOURCE = :code_fetcher
         DESTINATION = :package_builder
