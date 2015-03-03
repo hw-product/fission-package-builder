@@ -30,7 +30,6 @@ module Fission
         failure_wrap(message) do |payload|
           keepalive = every(10){ message.touch! }
           begin
-            payload.set(:data, :package_builder, {})
             copy_path = repository_copy(payload[:message_id], payload.get(:data, :package_builder, :code_asset))
             base_config = load_config(copy_path)
             if(base_config[:target])
