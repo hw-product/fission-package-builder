@@ -4,8 +4,8 @@ module Fission
   module PackageBuilder
     module Formatters
 
-      # Formatter for github kit
-      class GithubKit < Fission::Formatter
+      # Formatter for github kit commit comment
+      class GithubCommitComment < Fission::Formatter
 
         SOURCE = :package_builder
         DESTINATION = :github_kit
