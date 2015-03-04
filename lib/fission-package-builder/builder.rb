@@ -19,7 +19,8 @@ module Fission
       # @return [Truthy, Falsey]
       def valid?(message)
         super do |payload|
-          payload.get(:data, :package_builder, :code_asset)
+          payload.get(:data, :package_builder, :code_asset) &&
+            payload.get(:data, :github, :ref).include?('tag')
         end
       end
 
