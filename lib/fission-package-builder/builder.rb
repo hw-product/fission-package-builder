@@ -19,8 +19,7 @@ module Fission
       # @return [Truthy, Falsey]
       def valid?(message)
         super do |payload|
-          payload.get(:data, :package_builder, :code_asset) &&
-            payload.get(:data, :github, :ref).include?('tag')
+          payload.get(:data, :package_builder, :code_asset)
         end
       end
 
@@ -126,13 +125,13 @@ module Fission
       # Build the JSON for our chef run
       def build_chef_json(config, params, target_store)
         unless(config[:build][:version])
-          if(params.get(:data, :format, :repository, :tag))
-            config[:build][:version] = params.get(:data, :format, :repository, :ref).sub('refs/tags/', '')
+          if(params.get(:data, :code_fetcher, :info, :reference).include?('tag'))
+            config[:build][:version] = params.get(:data, :code_fetcher, :info, :reference).sub('refs/tags/', '')
           else
             config[:build][:version] = Time.now.strftime('%Y%m%d%H%M%S')
           end
         end
-        params[:data][:package_builder][:name] = config[:build][:name] || params.get(:data, :format, :repository, :name)
+        params[:data][:package_builder][:name] = config[:build][:name] || params.get(:data, :code_fetcher, :info, :name)
         params[:data][:package_builder][:version] = config[:build][:version]
         JSON.dump(
           :packager => {
@@ -146,9 +145,9 @@ module Fission
               'PACKAGER_INSTALL_PREFIX' => config[:build][:install_prefix],
               'PACKAGER_TYPE' => config[:target][:package],
               'PACKAGER_VERSION' => config[:build][:version],
-              'PACKAGER_COMMIT_SHA' => params.get(:data, :format, :repository, :commit_sha),
-              'PACKAGER_PUSHER_NAME' => params.get(:data, :format, :repository, :user_name),
-              'PACKAGER_PUSHER_EMAIL' => params.get(:data, :format, :repository, :user_email)
+              'PACKAGER_COMMIT_SHA' => params.get(:data, :code_fetcher, :info, :commit_sha),
+              'PACKAGER_PUSHER_NAME' => params.get(:data, :code_fetcher, :info, :owner),
+              'PACKAGER_PUSHER_EMAIL' => params.get(:data, :code_fetcher, :info, :push_email)
             }
           },
           :fpm_tng => {
