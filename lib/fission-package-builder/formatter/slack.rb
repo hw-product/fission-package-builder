@@ -10,7 +10,7 @@ module Fission
         DESTINATION = :slack
 
         def format(payload)
-          if(payload.get(:data, :package_builder, :name))
+          if(payload.get(:data, :package_builder, :keys))
             pkg = payload[:data][:package_builder]
             origin_info = origin(payload[:brand])
             if(payload[:status].to_s == 'error')
