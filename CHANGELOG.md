@@ -1,3 +1,6 @@
+# v0.1.10
+* Updates to where information is pulled from payloads
+
 # v0.1.8
 * Add formatters to support notifications
 * Update to support receiving payloads from jackals
