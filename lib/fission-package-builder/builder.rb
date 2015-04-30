@@ -133,6 +133,7 @@ module Fission
         end
         params[:data][:package_builder][:name] = config[:build][:name] || params.get(:data, :code_fetcher, :info, :name)
         params[:data][:package_builder][:version] = config[:build][:version]
+        config[:build][:version] = config[:build][:version].gsub(/^[^\d]*/, '')
         JSON.dump(
           :packager => {
             :build => config.merge(
