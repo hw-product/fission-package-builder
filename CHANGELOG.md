@@ -1,3 +1,6 @@
+# v0.1.12
+* Strip non-integer character prefix on version
+
 # v0.1.10
 * Updates to where information is pulled from payloads
 
