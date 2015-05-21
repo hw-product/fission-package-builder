@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.homepage = 'http://github.com/heavywater/fission-package-builder'
   s.description = 'Fission Package Builder'
   s.require_path = 'lib'
-  s.add_dependency 'fission'
+  s.add_dependency 'fission', '>= 0.2.4', '< 1.0.0'
   s.add_dependency 'fission-assets'
   s.add_dependency 'attribute_struct'
   s.add_dependency 'elecksee'
