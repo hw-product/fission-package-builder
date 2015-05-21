@@ -1,3 +1,6 @@
+# v0.1.14
+* Add service registration
+
 # v0.1.12
 * Strip non-integer character prefix on version
 
