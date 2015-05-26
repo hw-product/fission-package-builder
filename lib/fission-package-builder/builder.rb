@@ -60,9 +60,9 @@ module Fission
       # payload:: Payload
       # Retrieve previous versions from asset store and add to history
       def load_history_assets(config, payload)
-        if(versions = config.retrieve(:build, :history, :versions))
+        if(versions = config.get(:build, :history, :versions))
           versions = [versions].flatten.compact.uniq
-          ext = config.retrieve(:target, :package)
+          ext = config.get(:target, :package)
           versions.each do |version|
             filename = "#{payload[:data][:package_builder][:name]}-#{version}.deb"
             key = generate_key(payload, filename)
@@ -87,7 +87,7 @@ module Fission
       def generate_key(payload, file)
         key = [
           'packages',
-          retrieve(payload, :data, :account, :name),
+          payload.get(:data, :account, :name),
           File.basename(file)
         ].compact.join('/')
       end
