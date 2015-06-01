@@ -48,7 +48,8 @@ module Fission
               end
               job_completed(:package_builder, payload, message)
             rescue Lxc::CommandFailed => e
-              failed(payload, message, e.message)
+              run_error = extract_chef_stacktrace(payload)
+              failed(payload, message, run_error || e.message)
             end
           ensure
             keepalive.cancel
@@ -321,6 +322,7 @@ module Fission
           end
         else
           debug "Failed to locate chef stacktrace file for error extraction (#{path})"
+          nil
         end
       end
 
