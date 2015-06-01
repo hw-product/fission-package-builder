@@ -47,7 +47,7 @@ module Fission
                 store_packages(payload, config[:target])
               end
               job_completed(:package_builder, payload, message)
-            rescue Lxc::CommandFailed => e
+            rescue => e
               run_error = extract_chef_stacktrace(payload)
               failed(payload, message, run_error || e.message)
             end
@@ -307,9 +307,7 @@ module Fission
         path = File.join(workspace(payload[:message_id], :chef_cache), 'chef-stacktrace.out')
         if(File.exists?(path))
           debug "Found chef stacktrace file for error extraction (#{path})"
-          # TODO: Don't do this
-          # NOTE: doing this until we get log exports in place
-          content = %x{sudo cat #{path}}.split("\n")
+          content = File.readlines(path)
           start = content.index{|line| line.start_with?('ERROR')}
           stop = content.index{|line| line.start_with?('Ran')}
           if(start && stop)
