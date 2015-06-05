@@ -13,10 +13,14 @@ module Fission
         end
 
         def load(path)
-          if(File.exist?(path))
-            json_load(path) || ruby_load(path)
-          else
-            raise Error::PkgrFileNotFound.new("Failed to locate pkgr file: #{path}")
+          begin
+            if(File.exist?(path))
+              json_load(path) || ruby_load(path)
+            else
+              raise Error::PkgrFileNotFound.new("Failed to locate pkgr file: #{path}")
+            end
+          rescue => e
+            raise "Failed to parse .packager file! (#{e})"
           end
         end
 
