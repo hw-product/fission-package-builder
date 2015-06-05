@@ -14,6 +14,9 @@ module Fission
   module PackageBuilder
     class Builder < Fission::Callback
 
+      DEFAULT_PLATFORM = 'ubuntu_1404'
+      DEFAULT_UBUNTU_VERSION = '14.04'
+
       # Validity of message for processing
       #
       # @return [Truthy, Falsey]
@@ -52,6 +55,12 @@ module Fission
               failed(payload, message, run_error || e.message)
             end
           ensure
+            log_file_path = File.join(workspace(payload[:message_id], :log), "#{payload[:message_id]}.log")
+            if(File.exists?(log_file_path))
+              key = File.join('package_builder', "#{payload[:message_id]}.log")
+              asset_store.put(File.open(log_file_path, 'r'), key)
+              payload.set(:data, :package_builder, :logs, :output, key)
+            end
             keepalive.cancel
           end
         end
@@ -161,34 +170,21 @@ module Fission
       end
 
       # uuid:: unique ID (message id)
-      # base:: Information hash of platform information
-      # Return proper container name to build against
-      def container(uuid, base={})
-        if(base[:platform])
-          base = "#{base[:platform]}_#{base.fetch(:version, '12.04').gsub('.', '')}"
-        else
-          base = 'ubuntu_1204'
-        end
-      end
-
-      # uuid:: unique ID (message id)
       # json:: chef json
       # base:: base container for ephemeral
       # Start the build
       def start_build(uuid, json, base={})
         if(base[:platform])
-          base = "#{base[:platform]}_#{base.fetch(:version, '12.04').gsub('.', '')}"
+          base = "#{base[:platform]}_#{base.fetch(:version, DEFAULT_UBUNTU_VERSION).gsub('.', '')}"
         else
-          base = 'ubuntu_1204'
+          base = DEFAULT_PLATFORM
         end
         json_path = File.join(workspace(uuid, :first_runs), "#{uuid}.json")
         File.open(json_path, 'w') do |f|
           f.puts json
         end
         log_file_path = File.join(workspace(uuid, :log), "#{uuid}.log")
-        log_file = File.open(log_file_path, 'w')
-        log_file.sync = true
-        command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid)]
+        command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid), '-L', log_file_path]
         ephemeral = Lxc::Ephemeral.new(
           :original => base,
           :bind => workspace(uuid),
@@ -208,7 +204,7 @@ module Fission
       # thing:: bucket in workspace
       # Return path to workspace (creates if required)
       def workspace(uuid, thing=nil)
-        base = Carnivore::Config.get(:fission, :package_builder, :working_directory) || '/tmp'
+        base = working_directory(:message_id => uuid)
         path = File.join(base, uuid, thing.to_s)
         unless(File.directory?(path))
           FileUtils.mkdir_p(path)
@@ -241,6 +237,7 @@ module Fission
           cache_path = workspace(uuid, :chef_cache)
           cookbook_path = cookbook_copy(uuid)
           File.open(solo_path, 'w') do |file|
+            file.puts "log_location STDOUT"
             file.puts "file_cache_path '#{cache_path}'"
             file.puts "cookbook_path '#{cookbook_path}'"
           end
@@ -263,7 +260,7 @@ module Fission
 
       # Path to chef-solo
       def chef_exec_path
-        Carnivore::Config.get(:fission, :package_builder, :chef_solo_path) || 'chef-solo'
+        config.fetch(:chef_solo_path, 'chef-solo')
       end
 
       # source:: source directory
