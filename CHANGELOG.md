@@ -1,3 +1,8 @@
+# v0.1.16
+* Attempt to use extracted error message for exception message
+* Provide better error when packager file fails to load
+* Properly store chef run log data
+
 # v0.1.14
 * Add service registration
 
