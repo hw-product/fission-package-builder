@@ -1,3 +1,8 @@
+# v0.1.18
+* Ensure keepalive is always halted
+* Best attempt at log storage, log error if fail
+* Extract error from general log, not trace
+
 # v0.1.16
 * Attempt to use extracted error message for exception message
 * Provide better error when packager file fails to load
