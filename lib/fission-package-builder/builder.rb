@@ -31,8 +31,9 @@ module Fission
       # @param message [Carnivore::Message]
       def execute(message)
         failure_wrap(message) do |payload|
-          keepalive = every(10){ message.touch! }
+          keepalive = nil
           begin
+            keepalive = every(10){ message.touch! }
             copy_path = repository_copy(payload[:message_id], payload.get(:data, :package_builder, :code_asset))
             base_config = load_config(copy_path)
             if(base_config[:target])
@@ -55,11 +56,15 @@ module Fission
               failed(payload, message, run_error || e.message)
             end
           ensure
-            log_file_path = File.join(workspace(payload[:message_id], :log), "#{payload[:message_id]}.log")
-            if(File.exists?(log_file_path))
-              key = File.join('package_builder', "#{payload[:message_id]}.log")
-              asset_store.put(File.open(log_file_path, 'r'), key)
-              payload.set(:data, :package_builder, :logs, :output, key)
+            begin
+              log_file_path = File.join(workspace(payload[:message_id], :log), "#{payload[:message_id]}.log")
+              if(File.exists?(log_file_path))
+                key = File.join('package_builder', "#{payload[:message_id]}.log")
+                asset_store.put(key, File.open(log_file_path, 'r'))
+                payload.set(:data, :package_builder, :logs, :output, key)
+              end
+            rescue => e
+              error "Failed to persist log data for message #{message}: #{e.class} - #{e}"
             end
             keepalive.cancel
           end
@@ -301,9 +306,9 @@ module Fission
       # Attempt to extract error message from chef-stacktrace if file
       # exists and error is findable
       def extract_chef_stacktrace(payload)
-        path = File.join(workspace(payload[:message_id], :chef_cache), 'chef-stacktrace.out')
+        path = File.join(workspace(uuid, :log), "#{uuid}.log")
         if(File.exists?(path))
-          debug "Found chef stacktrace file for error extraction (#{path})"
+          debug "Found chef log file for error extraction (#{path})"
           content = File.readlines(path)
           start = content.index{|line| line.start_with?('ERROR')}
           stop = content.index{|line| line.start_with?('Ran')}
