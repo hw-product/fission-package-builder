@@ -42,30 +42,34 @@ module Fission
               )
             end
             begin
-              base_config.each do |key, config|
-                next if config.nil? || config.empty?
-                info "Starting build for <#{key}> on #{message}"
-                chef_json = build_chef_json(config, payload, copy_path)
-                load_history_assets(config, payload)
-                start_build(payload[:message_id], chef_json, config[:target])
-                store_packages(payload, config[:target])
+              begin
+                base_config.each do |key, config|
+                  next if config.nil? || config.empty?
+                  info "Starting build for <#{key}> on #{message}"
+                  chef_json = build_chef_json(config, payload, copy_path)
+                  load_history_assets(config, payload)
+                  start_build(payload[:message_id], chef_json, config[:target])
+                  store_packages(payload, config[:target])
+                end
+              ensure
+                begin
+                  log_file_path = File.join(workspace(payload[:message_id], :log), "#{payload[:message_id]}.log")
+                  if(File.exists?(log_file_path))
+                    key = File.join('package_builder', "#{payload[:message_id]}.log")
+                    asset_store.put(key, File.open(log_file_path, 'r'))
+                    payload.set(:data, :package_builder, :logs, :output, key)
+                  end
+                rescue => e
+                  error "Failed to persist log data for message #{message}: #{e.class} - #{e}"
+                end
               end
+
               job_completed(:package_builder, payload, message)
             rescue => e
               run_error = extract_chef_stacktrace(payload)
               failed(payload, message, run_error || e.message)
             end
           ensure
-            begin
-              log_file_path = File.join(workspace(payload[:message_id], :log), "#{payload[:message_id]}.log")
-              if(File.exists?(log_file_path))
-                key = File.join('package_builder', "#{payload[:message_id]}.log")
-                asset_store.put(key, File.open(log_file_path, 'r'))
-                payload.set(:data, :package_builder, :logs, :output, key)
-              end
-            rescue => e
-              error "Failed to persist log data for message #{message}: #{e.class} - #{e}"
-            end
             keepalive.cancel
           end
         end
