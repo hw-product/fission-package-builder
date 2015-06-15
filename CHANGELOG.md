@@ -1,3 +1,6 @@
+# v0.1.20
+* Update log persist location within execution
+
 # v0.1.18
 * Ensure keepalive is always halted
 * Best attempt at log storage, log error if fail
