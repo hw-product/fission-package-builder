@@ -64,12 +64,13 @@ module Fission
                   error "Failed to persist log data for message #{message}: #{e.class} - #{e}"
                 end
               end
-
               job_completed(:package_builder, payload, message)
             rescue => e
               run_error = extract_chef_stacktrace(payload)
               failed(payload, message, run_error || e.message)
             end
+          rescue => e
+            failed(payload, message, e.message)
           ensure
             keepalive.cancel
           end
