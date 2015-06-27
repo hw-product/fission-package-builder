@@ -1,3 +1,8 @@
+# v0.1.22
+* Add missing UUID variable on extraction
+* Set package type if not provided
+* Rescue out exceptions and force failed state
+
 # v0.1.20
 * Update log persist location within execution
 
