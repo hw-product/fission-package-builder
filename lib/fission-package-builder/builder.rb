@@ -310,6 +310,7 @@ module Fission
       # Attempt to extract error message from chef-stacktrace if file
       # exists and error is findable
       def extract_chef_stacktrace(payload)
+        uuid = payload[:message_id]
         path = File.join(workspace(uuid, :log), "#{uuid}.log")
         if(File.exists?(path))
           debug "Found chef log file for error extraction (#{path})"
