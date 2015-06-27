@@ -15,6 +15,7 @@ module Fission
     class Builder < Fission::Callback
 
       DEFAULT_PLATFORM = 'ubuntu_1404'
+      DEFAULT_PACKAGE = 'deb'
       DEFAULT_UBUNTU_VERSION = '14.04'
 
       # Validity of message for processing
@@ -153,6 +154,9 @@ module Fission
         params[:data][:package_builder][:name] = config[:build][:name] || params.get(:data, :code_fetcher, :info, :name)
         params[:data][:package_builder][:version] = config[:build][:version]
         config[:build][:version] = config[:build][:version].gsub(/^[^\d]*/, '')
+        unless(config.get(:target, :package))
+          config.set(:target, :package, DEFAULT_PACKAGE)
+        end
         JSON.dump(
           :packager => {
             :build => config.merge(
