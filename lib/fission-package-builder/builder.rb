@@ -136,8 +136,16 @@ module Fission
 
       # repo_path:: Path to repository on local sytem
       # Returns hash'ed configuration file
+      #
+      # @param repo_path [String]
+      # @return [Smash]
       def load_config(repo_path)
-        Packager.load(File.join(repo_path, Packager.file_name))
+        begin
+          Packager.load(File.join(repo_path, Packager.file_name))
+        rescue => e
+          error "Failed to load configuration file: #{repo_path}/#{Packager.file_name} - #{e.class}: #{e.message}"
+          raise 'Failed to load configuration file!'
+        end
       end
 
       # config:: build config hash
