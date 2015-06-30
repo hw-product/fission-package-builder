@@ -1,0 +1,1 @@
+Configuration.new{ path 'vendor/cookbooks' }
