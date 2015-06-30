@@ -215,7 +215,7 @@ module Fission
         begin
           ephemeral.start!
         rescue Lxc::CommandFailed => e
-          error "Package build failed: #{e.result.stderr}"
+          error "Package build failed: #{e}"
           debug "Packaging error: #{e.inspect}"
           raise e
         end
@@ -328,18 +328,22 @@ module Fission
         if(File.exists?(path))
           debug "Found chef log file for error extraction (#{path})"
           content = File.readlines(path)
-          start = content.index{|line| line.start_with?('ERROR')}
-          stop = content.index{|line| line.start_with?('Ran')}
-          if(start && stop)
-            error_msg = content.slice(start, stop - start + 1)
-            debug "Extracted error message: #{error_msg}"
-            error_msg
-          else
-            debug "Chef stacktrace content: #{content}"
-            nil
+          error_lines = content.find_all do |line|
+            line.include?('ERROR') &&
+              !line.include?('handlers')
           end
+          error_lines.each do |line|
+            line.sub!(/^.+ERROR: /, '')
+            line.sub!(/^.+had an error: /, '')
+          end
+          if(error_lines.empty?)
+            error_lines.push('Failed to extract error information!')
+          end
+          error_msg = error_lines.join("\n")
+          debug "Extracted error message: #{error_msg}"
+          error_msg
         else
-          debug "Failed to locate chef stacktrace file for error extraction (#{path})"
+          debug "Failed to locate chef log file for error extraction (#{path})"
           nil
         end
       end
