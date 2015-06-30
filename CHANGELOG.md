@@ -1,3 +1,8 @@
+# v0.1.26
+* Replace librarian with batali
+* Update vendored cookbooks
+* Update error extractor to attempt actual command error extraction
+
 # v0.1.24
 * Better error extraction from log file
 * Provide usable error on config file parse failure
