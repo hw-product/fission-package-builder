@@ -1,75 +1,41 @@
-include_recipe 'pkg-build::deps'
+versions = [node[:pkg_build][:passenger][:version]]
+versions += node[:pkg_build][:passenger][:versions] if node[:pkg_build][:passenger][:versions]
+versions.uniq!
 
-ruby_block 'Detect omnibus ruby' do
-  block do
-    if(node[:languages][:ruby][:ruby_bin].include?('/opt/chef'))
-      raise 'Cannot build passenger against omnibus Chef Ruby installation!'
+if(node[:pkg_build][:isolate])
+  node[:pkg_build][:passenger][:ruby_versions].each do |r_ver, pass_vers|
+    Array(pass_vers).each do |passenger_version|
+      pkg_build_isolate "passenger-rb#{r_ver}" do
+        container "ubuntu_1204-ruby#{r_ver}"
+        attributes(
+          :pkg_build => {
+            :passenger => {
+              :version => passenger_version,
+              :ruby_version => r_ver,
+              :ruby_dependency => PkgBuild::Ruby.ruby_name(node, r_ver)
+            }
+          },
+          :builder => {
+            :build_dir => File.join(node[:builder][:build_dir], "ruby_#{r_ver}"),
+            :packaging_dir => File.join(node[:builder][:packaging_dir], "ruby_#{r_ver}")
+          }
+        )
+        run_list %w(recipe[pkg-build::passenger])
+        not_if do
+          File.exists?(File.join(node[:fpm_tng][:package_dir], "#{PkgBuild::Ruby.gem_name(node, 'libapache2-mod-passenger', r_ver)}-#{passenger_version}.deb")) &&
+            File.exists?(File.join(node[:fpm_tng][:package_dir], "#{PkgBuild::Ruby.gem_name(node, 'passenger', r_ver)}-#{passenger_version}.deb"))
+        end
+      end
     end
   end
-  not_if do
-    node[:pkg_build][:passenger][:allow_omnibus_chef_ruby]
+else
+  include_recipe 'pkg-build::deps'
+  [node[:pkg_build][:passenger][:versions] + Array(node[:pkg_build][:passenger][:version])].flatten.compact.uniq.each do |passenger_version|
+    build_passenger "passenger-#{passenger_version}" do
+      version passenger_version
+      ruby_version node[:pkg_build][:passenger][:ruby_version]
+      ruby_dependency node[:pkg_build][:passenger][:ruby_dependency]
+      repository node[:pkg_build][:repository]
+    end
   end
-end
-
-if(node[:pkg_build][:use_pkg_build_ruby])
-  ruby_name = [node[:pkg_build][:pkg_prefix]]
-  if(node[:pkg_build][:ruby][:suffix_version])
-      ruby_name << "ruby#{node[:pkg_build][:ruby][:version]}"
-  else
-      ruby_name << 'ruby'
-  end
-  ruby_name = ruby_name.compact.join('-')
-end
-
-%w(libcurl4-gnutls-dev apache2 apache2-prefork-dev).each do |dep_pkg|
-  package dep_pkg
-end
-
-libpassenger_name = [node[:pkg_build][:pkg_prefix], 'libapache2-mod-passenger'].compact.join('-')
-passenger_gem_name = [node[:pkg_build][:pkg_prefix], 'rubygem-passenger'].compact.join('-')
-gem_prefix = node[:pkg_build][:gems][:dir] || node[:languages][:ruby][:gems_dir]
-pass_prefix = "gems/passenger-#{node[:pkg_build][:passenger][:version]}"
-builder_dir "passenger-#{node[:pkg_build][:passenger][:version]}" do
-  init_command "#{node[:pkg_build][:gems][:exec]} install --install-dir . --no-ri --no-rdoc --ignore-dependencies -E --version #{node[:pkg_build][:passenger][:version]} passenger"
-  suffix_cwd "gems/passenger-#{node[:pkg_build][:passenger][:version]}"
-  commands [
-    "#{node[:pkg_build][:rake_bin]} apache2",
-    'mkdir -p $PKG_DIR/libmod/etc/apache2/mods-available',
-    "mkdir -p $PKG_DIR/libmod/#{node[:pkg_build][:passenger][:root]}/apache2/modules",
-    "mkdir -p $PKG_DIR/libmod/#{node[:pkg_build][:passenger][:root]}/phusion-passenger",
-    "cp ext/apache2/mod_passenger.so $PKG_DIR/libmod/#{node[:pkg_build][:passenger][:root]}/apache2/modules",
-    "echo \"<IfModule mod_passenger.c>\\n  PassengerRoot #{node[:pkg_build][:gems][:dir]}/gems/passenger-#{node[:pkg_build][:passenger][:version]}\n  PassengerRuby #{node[:pkg_build][:ruby_bin]}\\n</IfModule>\\n\" > $PKG_DIR/libmod/etc/apache2/mods-available/passenger.conf",
-    "echo \"LoadModule passenger_module #{node[:pkg_build][:passenger][:root]}/apache2/modules/mod_passenger.so\" > $PKG_DIR/libmod/etc/apache2/mods-available/passenger.load",
-    "mkdir -p $PKG_DIR/gem/#{node[:pkg_build][:gems][:dir]}",
-    "cp -a ../../gems $PKG_DIR/gem/#{node[:pkg_build][:gems][:dir]}",
-    "cp -a ../../specifications $PKG_DIR/gem/#{node[:pkg_build][:gems][:dir]}",
-    "cp -a ../../bin $PKG_DIR/gem/#{node[:pkg_build][:ruby_bin_dir]}",
-  ]
-end
-
-fpm_tng_gemdeps 'passenger' do
-  gem_package_name_prefix [node[:pkg_build][:pkg_prefix], 'rubygem'].compact.join('-')
-  gem_gem node[:pkg_build][:gems][:exec]
-  reprepro node[:pkg_build][:reprepro]
-  version node[:pkg_build][:passenger][:version]
-end
-
-fpm_tng_package libpassenger_name do
-  output_type 'deb'
-  version node[:pkg_build][:passenger][:version]
-  description 'Passenger apache module installation'
-  chdir File.join(node[:builder][:packaging_dir], "passenger-#{node[:pkg_build][:passenger][:version]}", 'libmod')
-  depends [
-    'apache2', 'apache2-mpm-prefork', passenger_gem_name, node[:pkg_build][:passenger][:ruby_dependency]
-  ].compact
-  reprepro node[:pkg_build][:reprepro]
-end
-
-fpm_tng_package passenger_gem_name do
-  output_type 'deb'
-  version node[:pkg_build][:passenger][:version]
-  description 'Passenger apache module installation'
-  chdir File.join(node[:builder][:packaging_dir], "passenger-#{node[:pkg_build][:passenger][:version]}", 'gem')
-  depends %w(fastthread daemon-controller rack).map{|x|[node[:pkg_build][:pkg_prefix], 'rubygem', x].compact.join('-') }
-  reprepro node[:pkg_build][:reprepro]
 end

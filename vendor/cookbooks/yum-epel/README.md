@@ -16,6 +16,10 @@ Attributes
 The following attributes are set by default
 
 ``` ruby
+default['yum-epel']['repositories'] = %w{epel epel-debuginfo epel-source epel-testing epel-testing-debuginfo epel-testing-source}
+```
+
+``` ruby
 default['yum']['epel']['repositoryid'] = 'epel'
 default['yum']['epel']['description'] = 'Extra Packages for Enterprise Linux 6 - $basearch'
 default['yum']['epel']['mirrorlist'] = 'http://mirrors.fedoraproject.org/mirrorlist?repo=epel-5&arch=$basearch'
@@ -139,10 +143,10 @@ include_recipe 'yum-epel'
 
 License & Authors
 -----------------
-- Author:: Sean OMeara (<someara@opscode.com>)
+- Author:: Sean OMeara (<someara@chef.io>)
 
 ```text
-Copyright:: 2011-2013 Opscode, Inc.
+Copyright:: 2011-2013 Chef Software, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

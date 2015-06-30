@@ -1,5 +1,3 @@
-[![Build Status](https://secure.travis-ci.org/jesseadams/reprepro.png?branch=master)](http://travis-ci.org/jesseadams/reprepro)
-
 DESCRIPTION
 ===========
 

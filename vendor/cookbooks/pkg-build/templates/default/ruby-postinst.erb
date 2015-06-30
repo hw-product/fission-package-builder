@@ -4,10 +4,10 @@ set -e
 
 if [ "$1" = "configure" ]
 then
-  RUBYVER=<%= node[:pkg_build][:ruby][:version] %>
+  RUBYVER=<%= @version %>
   BINDIR=<%= node[:pkg_build][:ruby][:install_prefix] %>/bin
-  update-alternatives --install /usr/bin/gem gem ${BINDIR}/gem${RUBYVER} 10
-  update-alternatives --install /usr/bin/ruby ruby ${BINDIR}/ruby${RUBYVER} 10 \
+  update-alternatives --install /usr/bin/gem gem ${BINDIR}/gem${RUBYVER} <%= @priority %>
+  update-alternatives --install /usr/bin/ruby ruby ${BINDIR}/ruby${RUBYVER} <%= @priority %> \
     --slave /usr/bin/erb erb ${BINDIR}/erb${RUBYVER} \
     --slave /usr/bin/testrb testrb ${BINDIR}/testrb${RUBYVER} \
     --slave /usr/bin/irb irb ${BINDIR}/irb${RUBYVER} \

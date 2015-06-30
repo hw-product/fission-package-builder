@@ -1,6 +1,6 @@
 #
-# Author:: Joshua Timberman <joshua@opscode.com>
-# Copyright:: Copyright (c) 2012, Opscode, Inc. <legal@opscode.com>
+# Author:: Joshua Timberman <joshua@chef.io>
+# Copyright:: Copyright (c) 2012, Chef Software, Inc. <legal@chef.io>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,4 +25,4 @@ default['erlang']['source']['build_flags'] = ''
 default['erlang']['source']['cflags'] = ''
 
 default['erlang']['esl']['version'] = nil
-default['erlang']['esl']['lsb_codename'] = node['lsb']['codename']
+default['erlang']['esl']['lsb_codename'] = node['lsb'] ? node['lsb']['codename'] : 'no_lsb'

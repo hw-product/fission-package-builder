@@ -14,11 +14,10 @@ Chef version 0.10.10+ and Ohai 0.6.12+ are required
 
 Tested on:
 
-* Ubuntu 10.04, 11.10, 12.04
-* Red Hat Enterprise Linux (CentOS/Amazon/Scientific/Oracle) 5.7, 6.2
+* Ubuntu 10.04, 11.10, 12.04, 14.04
+* Red Hat Enterprise Linux (CentOS/Amazon/Scientific/Oracle) 5.11, 6.6
 
-**Notes**: This cookbook has been tested on the listed platforms. It
-  may work on other platforms with or without modification.
+**Notes**: This cookbook has been tested on the listed platforms. It may work on other platforms with or without modification.
 
 ## Cookbooks
 
@@ -63,8 +62,7 @@ Installs Erlang from source.
 
 ## erlang_solutions
 
-Adds Erlang Solutions' [package repositories][] on Debian, CentOS (>
-5), and Fedora systems, and installs the `esl-erlang` package.
+Adds Erlang Solutions' [package repositories][] on Debian, CentOS (>5), and Fedora systems, and installs the `esl-erlang` package.
 
 [package repositories]:https://www.erlang-solutions.com/downloads/download-erlang-otp
 
@@ -72,12 +70,12 @@ License and Author
 ==================
 
 * Author: Joe Williams (<joe@joetify.com>)
-* Author: Joshua Timberman (<joshua@opscode.com>)
-* Author: Matt Ray (<matt@opscode.com>)
+* Author: Joshua Timberman (<joshua@chef.io>)
+* Author: Matt Ray (<matt@chef.io>)
 * Author: Hector Castro (<hector@basho.com>)
-* Author: Christopher Maier (<cm@opscode.com>)
+* Author: Christopher Maier (<cm@chef.io>)
 
-Copyright 2011-2013, Opscode, Inc.
+Copyright 2011-2015, Chef Software, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

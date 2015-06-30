@@ -15,7 +15,7 @@ attribute :run_list, :kind_of => Array
 attribute :chef_enabled, :kind_of => [TrueClass, FalseClass], :default => false
 attribute :chef_retries, :kind_of => Fixnum, :default => 0
 attribute :copy_data_bag_secret_file, :kind_of => [TrueClass, FalseClass], :default => false
-attribute :data_bag_secret_file, :kind_of => String, :default => Chef::Config[:encrypted_data_bag_secret]
+attribute :data_bag_secret_file, :kind_of => String, :default => Chef::EncryptedDataBagItem::DEFAULT_SECRET_FILE
 attribute :default_bridge, :kind_of => String
 attribute :static_ip, :kind_of => String
 attribute :static_netmask, :kind_of => String, :default => '255.255.255.0'
@@ -42,13 +42,6 @@ def interface(iname, &block)
   iface.container self.name
   iface.action :nothing
   @subresources << [iface, block]
-end
-
-def config(cname, &block)
-  conf = Chef::Resource::LxcConfig.new("lxc_config[#{self.name} - #{cname}]", nil)
-  conf.container self.name
-  conf.action :nothing
-  @subresources << [conf, block]
 end
 
 attr_reader :subresources

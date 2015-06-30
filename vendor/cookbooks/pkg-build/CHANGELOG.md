@@ -1,3 +1,15 @@
+## v0.2.2
+* Update passenger build to account for updated module path
+
+## v0.2.0
+* Allow packages to be built in isolation
+* Tailor support towards `repository` cookbook support (reprepro support still remains)
+* Fixes ruby version fetching by building proper url via version
+* Support packaging multiple versions of ruby that are non-conflicting on install
+* Update gem based packages to build against requested ruby version
+* Fix ruby postinst script to update priority based on version and use proper version path
+* Add support for attribute based meta package descriptions
+
 ## v0.1.9
 * Update `DAEMON` path in redis-server init file
 

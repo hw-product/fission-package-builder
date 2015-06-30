@@ -11,13 +11,14 @@ unless(node[:pkg_build][:builder])
   )
 end
 
-# TODO: Update this once reprepro can do ssl automagically
+# TODO: Add proper SSL once repository has added it
+# TODO: Customize what components and distributions we use here
 if(apt_node)
-  apt_url = "http://#{apt_node[:ipaddress]}:#{apt_node[:reprepro][:listen_port]}"
+  apt_url = "http://#{apt_node[:repository][:frontend][:fqdn]}:#{apt_node[:repository][:frontend][:listen_port]}"
   apt_repository 'pkg_build_repository' do
     uri apt_url
-    distribution node[:lsb][:codename]
-    components apt_node[:reprepro][:pulls][:component].split
+    distribution node[:pkg_build][:add_repo][:distribution]
+    components node[:pkg_build][:add_repo][:components]
     key ::File.join(apt_url, "#{apt_node[:gpg][:name][:email]}.gpg.key")
     action :add
   end

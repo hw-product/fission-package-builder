@@ -1,27 +1,36 @@
-include_recipe 'pkg-build::deps'
+if(node[:pkg_build][:isolate])
 
-node[:pkg_build][:sphinx][:build_dependencies].each do |d_pkg|
-  package d_pkg
-end
-
-sphinx_name = "sphinx-#{node[:pkg_build][:sphinx][:version]}"
-
-builder_remote sphinx_name do
-  remote_file "http://sphinxsearch.com/files/sphinx-#{node[:pkg_build][:sphinx][:version]}-release.tar.gz"
-  suffix_cwd "#{sphinx_name}-release"
-  commands [
-    './configure --prefix=$PKG_DIR/usr/local',
-    'make',
-    'make install'
-  ]
-  creates File.join(node[:builder][:packaging_dir], sphinx_name, 'usr/local/bin/searchd')
-end
-
-fpm_tng_package [node[:pkg_build][:pkg_prefix], 'sphinxsearch'].compact.join('-') do
-  output_type 'deb'
-  description 'Sphinx search'
-  depends %w(libc6 libexpat1 libgcc1 libmysqlclient18 libpq5 libstdc++6 libstemmer0d zlib1g)
-  version node[:pkg_build][:sphinx][:version]
-  chdir File.join(node[:builder][:packaging_dir], sphinx_name)
-  reprepro node[:pkg_build][:reprepro]
+  include_recipe 'pkg-build'
+  
+  [node[:pkg_build][:sphinx][:version], node[:pkg_build][:sphinx][:versions]].flatten.compact.uniq.each do |ver|
+    pkg_build_isolate "sphinx-#{ver}" do
+      container 'ubuntu_1204'
+      attributes(
+        :pkg_build => {
+          :sphinx => {
+            :version => ver,
+            :build_dependencies => node[:pkg_build][:sphinx][:build_dependencies]
+          }
+        }
+      )
+      run_list %w(recipe[pkg-build::sphinx])
+      not_if do
+        File.exists?(
+          File.join(
+            node[:fpm_tng][:package_dir],
+            "#{[node[:pkg_build][:pkg_prefix], 'sphinx', ver].compact.join('-')}.deb"
+          )
+        )
+      end
+    end
+  end
+else
+  [node[:pkg_build][:sphinx][:version], node[:pkg_build][:sphinx][:versions]].flatten.uniq.each do |ver|
+    build_sphinx ver do
+      version ver
+      if(node[:pkg_build][:repository])
+        repository node[:pkg_build][:repository]
+      end
+    end
+  end
 end
