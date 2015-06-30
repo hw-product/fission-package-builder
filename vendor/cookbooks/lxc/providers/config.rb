@@ -1,16 +1,22 @@
 require 'securerandom'
 
 def load_current_resource
+  require 'elecksee/lxc_file_config'
+
+  new_resource.utsname new_resource.container if new_resource.container
+  new_resource.utsname new_resource.name unless new_resource.utsname
+
   @lxc = ::Lxc.new(
-    new_resource.name,
+    new_resource.utsname,
     :base_dir => node[:lxc][:container_directory],
     :dnsmasq_lease_file => node[:lxc][:dnsmasq_lease_file]
   )
-  new_resource.utsname new_resource.name unless new_resource.utsname
+
   new_resource.rootfs @lxc.rootfs.to_path unless new_resource.rootfs
+
   new_resource.default_bridge node[:lxc][:bridge] unless new_resource.default_bridge
   new_resource.mount @lxc.path.join('fstab').to_path unless new_resource.mount
-  config = LxcFileConfig.new(@lxc.container_config)
+  config = ::Lxc::FileConfig.new(@lxc.container_config)
   if((new_resource.network.nil? || new_resource.network.empty?))
     if(config.network.empty?)
       default_net = {
@@ -62,14 +68,14 @@ end
 
 action :create do
   _lxc = @lxc
-  
+
   directory @lxc.path.to_path do
     action :create
   end
 
   file "lxc update_config[#{new_resource.utsname}]" do
     path _lxc.container_config.to_path
-    content LxcFileConfig.generate_config(new_resource)
+    content ::Lxc::FileConfig.generate_config(new_resource)
     mode 0644
   end
 end

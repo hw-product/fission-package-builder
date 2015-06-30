@@ -23,8 +23,8 @@ define :build_passenger, :version => nil, :ruby_version => nil, :repository => n
   end
 
   # define names and prefixes as required
-  libpassenger_name = PkgBuild::Ruby.gem_name(node, 'libapache2-mod-passenger', params[:ruby_version])
-  passenger_gem_name = PkgBuild::Ruby.gem_name(node, 'passenger', params[:ruby_version])
+  libpassenger_name = PkgBuild::Ruby.gem_name(node, 'libapache2-mod-passenger', params[:ruby_version], false)
+  passenger_gem_name = PkgBuild::Ruby.gem_name(node, 'passenger', params[:ruby_version], true)
   gem_prefix = node[:pkg_build][:gems][:dir] || node[:languages][:ruby][:gems_dir]
   pass_prefix = "gems/passenger-#{params[:version]}"
 

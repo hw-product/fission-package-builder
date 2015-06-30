@@ -1,54 +1,82 @@
-# install the server dependencies to run lxc
-node[:lxc][:packages].each do |lxcpkg|
-  package lxcpkg
+# -*- coding: utf-8 -*-
+
+include_recipe 'lxc::bugfix_precise_repo'
+
+dpkg_autostart 'lxc' do
+  allow false
+end
+
+dpkg_autostart 'lxc-net' do
+  allow false
 end
 
 include_recipe 'lxc::install_dependencies'
+include_recipe 'lxc::package'
 
-cookbook_file '/usr/local/bin/lxc-awesome-ephemeral' do
-  source 'lxc-awesome-ephemeral'
-  mode 0755
-end
-
-#if the server uses the apt::cacher-client recipe, re-use it
-unless Chef::Config[:solo]
-  if File.exists?('/etc/apt/apt.conf.d/01proxy')
-    query = 'recipes:apt\:\:cacher-ng'
-    query += " AND chef_environment:#{node.chef_environment}" if node['apt']['cacher-client']['restrict_environment']
-    Chef::Log.debug("apt::cacher-client searching for '#{query}'")
-    servers = search(:node, query)
-    if servers.length > 0
-      Chef::Log.info("apt-cacher-ng server found on #{servers[0]}.")
-      node.default[:lxc][:mirror] = "http://#{servers[0]['ipaddress']}:3142/archive.ubuntu.com/ubuntu"
+# Start at 0 and increment up if found
+unless(node[:network][:interfaces][:lxcbr0])
+  max = node.network.interfaces.map do |int, info|
+    info[:routes]
+  end.flatten.compact.map do |routes|
+    if(routes[:family].to_s == 'inet')
+      val = (routes[:via] || routes[:destination])
+      next unless val.start_with?('10.0')
+      val.split('/').first.to_s.split('.')[3].to_i
     end
-  end
+  end.flatten.compact.max
+
+  node.set[:lxc][:network_device][:oct] = max ? max + 1 : 0
+
+  # Test for existing bridge. Use different subnet if found
+  l_net = "10.0.#{node[:lxc][:network_device][:oct]}"
+  node.set[:lxc][:default_config][:lxc_addr] = "#{l_net}.1"
 end
 
-template '/etc/default/lxc' do
-  source 'default-lxc.erb'
+lxc_net_prefix = node[:lxc][:default_config][:lxc_addr].sub(%r{\.1$}, '')
+
+Chef::Log.debug "Lxc net prefix: #{lxc_net_prefix}"
+
+node.default[:lxc][:default_config][:lxc_network] = "#{lxc_net_prefix}.0/24"
+node.default[:lxc][:default_config][:lxc_dhcp_range] = "#{lxc_net_prefix}.2,#{lxc_net_prefix}.254"
+node.default[:lxc][:default_config][:lxc_dhcp_max] = '150'
+
+file '/usr/local/bin/lxc-awesome-ephemeral' do
+  action :delete
+  only_if{ node[:lxc][:deprecated][:delete_awesome_ephemerals] }
+end
+
+if(node[:lxc][:proxy][:enable])
+  include_recipe 'lxc::proxy'
+end
+
+file '/etc/default/lxc' do
+  content lazy{
+    node[:lxc][:default_config].map do |key, value|
+      "#{key.to_s.upcase}=#{value.inspect}"
+    end.join("\n")
+  }
   mode 0644
-  variables(
-    :config => {
-      :lxc_auto => node[:lxc][:auto_start],
-      :use_lxc_bridge => node[:lxc][:use_bridge],
-      :lxc_bridge => node[:lxc][:bridge],
-      :lxc_addr => node[:lxc][:addr],
-      :lxc_netmask => node[:lxc][:netmask],
-      :lxc_network => node[:lxc][:network],
-      :lxc_dhcp_range => node[:lxc][:dhcp_range],
-      :lxc_dhcp_max => node[:lxc][:dhcp_max],
-      :lxc_shutdown_timeout => node[:lxc][:shutdown_timeout],
-      :mirror => node[:lxc][:mirror]
-    }
-  )
 end
 
-# this just reloads the dnsmasq rules when the template is adjusted
-service 'lxc-net' do
-  action [:enable]
-  subscribes :restart, resources("template[/etc/default/lxc]"), :immediately
+if(node.platform_family?(:rhel))
+  include_recipe 'lxc::rhel_bridge'
 end
 
-service 'lxc' do
-  action [:enable, :start]
+include_recipe 'lxc::service'
+
+chef_gem 'elecksee' do
+  if(node[:lxc][:elecksee][:version_restriction])
+    version node[:lxc][:elecksee][:version_restriction]
+  end
+  action node[:lxc][:elecksee][:action]
 end
+
+file '/etc/apparmor.d/lxc/lxc-with-nesting' do
+  path 'lxc-nesting.apparmor'
+  mode 0644
+  action node[:lxc][:apparmor][:enable_nested_containers] ? :create : :delete
+  notifies :restart, 'service[lxc-apparmor]', :immediately
+  only_if{ node.platform == 'ubuntu' }
+end
+
+require 'elecksee/lxc'

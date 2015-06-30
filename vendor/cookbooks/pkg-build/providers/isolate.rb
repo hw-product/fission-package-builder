@@ -1,5 +1,7 @@
 action :build do
 
+  run_context.include_recipe 'lxc'
+
   dna_json = ::File.join(node[:pkg_build][:isolate_solo_dir], "#{rand(99999999)}-solo-dna.json")
 
   directory ::File.dirname(dna_json) do
@@ -22,7 +24,7 @@ action :build do
             :vendor => node[:pkg_build][:vendor],
             :maintainer => node[:pkg_build][:maintainer]
           },
-          :run_list => new_resource.run_list
+          :run_list => ['recipe[apt]'] + new_resource.run_list
         }, new_resource.attributes
       )
     )
@@ -31,9 +33,5 @@ action :build do
   lxc_ephemeral "Isolated: #{new_resource.name}" do
     command "chef-solo -j #{dna_json}"
     base_container new_resource.container
-    user 'root'
-    key '/opt/hw-lxc-config/id_rsa'
-    virtual_device 2000
-    stream_output true
   end
 end

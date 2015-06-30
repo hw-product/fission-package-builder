@@ -8,13 +8,12 @@ if(node[:pkg_build][:isolate])
     )
     run_list %w(recipe[pkg-build::meta_packages])
     not_if do
-      node[:pkg_build][:meta_mappings].map do |meta_name, value|
-        if(value.is_a?(Array))
-          to_process = value
-        elsif(value.kind_of?(Hash) || value.kind_of?(Chef::Node::Attribute))
-          to_process = [value.to_hash]
-        else
-          to_process = [{:version => '1.0.0', :dependencies => value}]
+      to_process = []
+      node[:pkg_build][:meta_mappings].map do |meta_name, info|
+        info[:versions].each do |version|
+          to_process << Mash.new(
+            :version => version
+          )
         end
         to_process.map do |pkg_info|
           File.exists?(File.join(node[:fpm_tng][:package_dir], "#{meta_name}-#{pkg_info[:version]}.deb")) ? nil : meta_name
@@ -27,13 +26,13 @@ else
 
   directory '/tmp/meta-dir'
 
-  node[:pkg_build][:meta_mappings].each do |meta_name, value|
-    if(value.is_a?(Array))
-      to_process = value
-    elsif(value.kind_of?(Hash) || value.kind_of?(Chef::Node::Attribute))
-      to_process = [value.to_hash]
-    else
-      to_process = [{:version => '1.0.0', :dependencies => value}]
+  node[:pkg_build][:meta_mappings].map do |meta_name, info|
+    to_process = []
+    info[:versions].each do |version|
+      to_process << Mash.new(
+        :version => version,
+        :dependencies => "#{info[:new_package_name]} = #{version}"
+      )
     end
     to_process.each do |pkg_info|
       pkg_info = Mash.new(pkg_info)

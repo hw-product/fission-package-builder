@@ -1,3 +1,38 @@
+## v2.0.0
+* Remove apt-cacher. Use polipo.
+* Update network configurations
+* Remove dpkg options on package install
+* Only use apparmor helper on ubuntu
+* Set auto on all interfaces
+* Fix up container setup command checks
+* Set up hacky support on RHEL family (still needs cleanup)
+
+## v1.1.8
+* Bug fix release: Upgrades `elecksee` gem to 1.0.20 minimum (#45)
+
+## v1.1.6
+* Fix data bag secret copy (thanks @jbianquetti)
+* Support upstart based services (thanks @bkw)
+* Update minimum version for `elecksee` helper gem
+
+## v1.1.4
+* Use latest omnibus deb for chef install within containers
+* Apt cacher related fixes
+* Handful of bug fixes
+
+## v1.1.2
+* Update lxc package installation to accept existing configuration file
+* Add missing `-n` option in `destroy` action for LWRP (thanks @sanders)
+
+## v1.1.0
+* Use `elecksee` gem for Lxc interaction
+* Add ephemeral LWRP
+* Allow AppArmor configuration
+* Unset default container passwords
+* Allow nesting LWRPs
+* Use `dpkg_autostart` and config ordering to allow lxc installation on hosts with 10.0.0.x address space in use
+* Remove deprecated `lxc-awesome-ephemeral` script by default
+
 ## v1.0.0
 * Extract container actions out to new LWRP `lxc`
 * Update `container` to use `lxc` resource for container actions

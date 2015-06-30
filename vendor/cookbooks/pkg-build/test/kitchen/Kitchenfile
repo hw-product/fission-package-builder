@@ -1,0 +1,9 @@
+cookbook "pkg-build" do
+  configuration "ruby"
+  configuration "passenger"
+=begin
+  configuration "redis"
+  configuration "sphinx"
+  configuration "repmgr"
+=end
+end

@@ -1,17 +1,22 @@
-include_recipe 'pkg-build::deps'
-
 if(node[:pkg_build][:isolate])
   include_recipe 'lxc'
   include_recipe 'apt::cacher-ng'
+
+  # old version of apt? kill the proxy template!
+  file '/etc/apt/apt.conf.d/01proxy' do
+    action :delete
+  end.run_action(:delete)
+
+  include_recipe 'pkg-build::deps'
 
   # Force an early restart since template update is delayed
   service 'pkg-build-cacher' do
     service_name 'apt-cacher-ng'
     action :restart
   end
-  
+
   Chef::Log.info 'Building containers for isolated package construction'
-  
+
   directory node[:pkg_build][:isolate_solo_dir] do
     recursive true
   end
@@ -87,7 +92,7 @@ if(node[:pkg_build][:isolate])
       mode 0644
     end
   end
-  
+
   # Force full cookbook downloads
   CookbookSynchronizer.send(:remove_const, :EAGER_SEGMENTS)
   CookbookSynchronizer.const_set(:EAGER_SEGMENTS, CookbookVersion::COOKBOOK_SEGMENTS)
@@ -100,4 +105,6 @@ if(node[:pkg_build][:isolate])
   )
   CookbookSynchronizer.new(cookbook_hash, EventDispatch::Dispatcher.new).sync_cookbooks
   Chef::Log.warn 'Full cookbook sync has been completed!'
+else
+  include_recipe 'pkg-build::deps'
 end

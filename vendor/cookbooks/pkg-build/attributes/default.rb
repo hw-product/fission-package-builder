@@ -7,9 +7,9 @@ default[:pkg_build][:gems][:dir] = node[:languages][:ruby][:gems_dir]
 default[:pkg_build][:ruby_bin] = node[:languages][:ruby][:ruby_bin]
 default[:pkg_build][:rake_bin] = 'rake'
 default[:pkg_build][:ruby_bin_dir] = node[:languages][:ruby][:bin_dir]
-default[:pkg_build][:reprepro] = true
+default[:pkg_build][:reprepro] = false
 default[:pkg_build][:repository] = nil
-default[:pkg_build][:isolate] = false
+default[:pkg_build][:isolate] = true
 default[:pkg_build][:isolated_containers][:ubuntu_1204][:template] = 'ubuntu'
 default[:pkg_build][:isolated_containers][:ubuntu_1204][:template_opts] = {'--release' => 'precise'}
 default[:pkg_build][:isolate_solo_dir] = '/tmp/pkg-build-solo'
