@@ -1,3 +1,7 @@
+# v0.1.24
+* Better error extraction from log file
+* Provide usable error on config file parse failure
+
 # v0.1.22
 * Add missing UUID variable on extraction
 * Set package type if not provided
