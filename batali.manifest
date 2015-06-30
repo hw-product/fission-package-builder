@@ -72,22 +72,62 @@
       }
     },
     {
-      "name": "packager",
+      "name": "lxc",
       "dependencies": [
         [
-          "pkg-build",
+          "dpkg_autostart",
+          ">= 0.1.10"
+        ],
+        [
+          "polipo",
           "> 0"
         ],
         [
-          "erlang",
+          "iptables-ng",
           "> 0"
         ]
       ],
-      "version": "0.1.1",
+      "version": "2.0.1",
       "source": {
-        "url": "git@github.com:heavywater/chef-packager.git",
-        "ref": "dad090b844a5b9f5bfcf130404f5e5757c4be442",
+        "url": "git://github.com/hw-cookbooks/lxc.git",
+        "ref": "d886324695db912a61000577afe00bc2a6fb772a",
         "type": "Batali::Source::Git"
+      }
+    },
+    {
+      "name": "dpkg_autostart",
+      "dependencies": [
+
+      ],
+      "version": "0.2.0",
+      "source": {
+        "type": "Batali::Source::Site",
+        "url": "https://supermarket.chef.io/api/v1/cookbooks/dpkg_autostart/versions/0.2.0/download",
+        "version": "0.2.0"
+      }
+    },
+    {
+      "name": "polipo",
+      "dependencies": [
+
+      ],
+      "version": "0.1.0",
+      "source": {
+        "type": "Batali::Source::Site",
+        "url": "https://supermarket.chef.io/api/v1/cookbooks/polipo/versions/0.1.0/download",
+        "version": "0.1.0"
+      }
+    },
+    {
+      "name": "iptables-ng",
+      "dependencies": [
+
+      ],
+      "version": "2.2.7",
+      "source": {
+        "type": "Batali::Source::Site",
+        "url": "https://supermarket.chef.io/api/v1/cookbooks/iptables-ng/versions/2.2.7/download",
+        "version": "2.2.7"
       }
     },
     {
@@ -95,15 +135,11 @@
       "dependencies": [
         [
           "builder",
-          ">= 0.0.0"
+          "> 0"
         ],
         [
           "fpm-tng",
           "~> 0.1.4"
-        ],
-        [
-          "reprepro",
-          "~> 0.3.0"
         ],
         [
           "apt",
@@ -111,7 +147,7 @@
         ],
         [
           "ohai",
-          ">= 0.0.0"
+          "> 0"
         ],
         [
           "discovery",
@@ -119,53 +155,22 @@
         ],
         [
           "lxc",
-          "~> 1.0.0"
+          "> 0"
         ],
         [
           "delayed_evaluator",
-          ">= 0.0.0"
+          "> 0"
         ],
         [
           "repository",
-          ">= 0.0.0"
+          "> 0"
         ]
       ],
-      "version": "0.2.2",
+      "version": "0.2.3",
       "source": {
-        "type": "Batali::Source::Site",
-        "url": "https://supermarket.chef.io/api/v1/cookbooks/pkg-build/versions/0.2.2/download",
-        "version": "0.2.2"
-      }
-    },
-    {
-      "name": "reprepro",
-      "dependencies": [
-        [
-          "build-essential",
-          ">= 0.0.0"
-        ],
-        [
-          "apache2",
-          ">= 0.0.0"
-        ]
-      ],
-      "version": "0.3.0",
-      "source": {
-        "type": "Batali::Source::Site",
-        "url": "https://supermarket.chef.io/api/v1/cookbooks/reprepro/versions/0.3.0/download",
-        "version": "0.3.0"
-      }
-    },
-    {
-      "name": "apache2",
-      "dependencies": [
-
-      ],
-      "version": "3.1.0",
-      "source": {
-        "type": "Batali::Source::Site",
-        "url": "https://supermarket.chef.io/api/v1/cookbooks/apache2/versions/3.1.0/download",
-        "version": "3.1.0"
+        "url": "git://github.com/hw-cookbooks/pkg-build.git",
+        "ref": "40d9146dc3df6e768d5cc55558919347dfb4382f",
+        "type": "Batali::Source::Git"
       }
     },
     {
@@ -205,18 +210,6 @@
       }
     },
     {
-      "name": "lxc",
-      "dependencies": [
-
-      ],
-      "version": "1.0.0",
-      "source": {
-        "type": "Batali::Source::Site",
-        "url": "https://supermarket.chef.io/api/v1/cookbooks/lxc/versions/1.0.0/download",
-        "version": "1.0.0"
-      }
-    },
-    {
       "name": "delayed_evaluator",
       "dependencies": [
 
@@ -252,6 +245,18 @@
       }
     },
     {
+      "name": "apache2",
+      "dependencies": [
+
+      ],
+      "version": "3.1.0",
+      "source": {
+        "type": "Batali::Source::Site",
+        "url": "https://supermarket.chef.io/api/v1/cookbooks/apache2/versions/3.1.0/download",
+        "version": "3.1.0"
+      }
+    },
+    {
       "name": "gpg",
       "dependencies": [
 
@@ -261,6 +266,25 @@
         "type": "Batali::Source::Site",
         "url": "https://supermarket.chef.io/api/v1/cookbooks/gpg/versions/0.2.2/download",
         "version": "0.2.2"
+      }
+    },
+    {
+      "name": "packager",
+      "dependencies": [
+        [
+          "pkg-build",
+          "> 0"
+        ],
+        [
+          "erlang",
+          "> 0"
+        ]
+      ],
+      "version": "0.1.1",
+      "source": {
+        "url": "git@github.com:heavywater/chef-packager.git",
+        "ref": "dad090b844a5b9f5bfcf130404f5e5757c4be442",
+        "type": "Batali::Source::Git"
       }
     },
     {

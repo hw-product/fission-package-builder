@@ -3,5 +3,7 @@ Batali.define do
 
   cookbook 'fpm-tng', git: 'git://github.com/hw-cookbooks/fpm-tng.git', ref: 'develop'
   cookbook 'builder', git: 'git://github.com/hw-cookbooks/builder.git', ref: 'develop'
+  cookbook 'lxc', git: 'git://github.com/hw-cookbooks/lxc.git', ref: 'develop'
+  cookbook 'pkg-build', git: 'git://github.com/hw-cookbooks/pkg-build.git', ref: 'develop'
   cookbook 'packager', git: 'git@github.com:heavywater/chef-packager.git', ref: 'develop'
 end
