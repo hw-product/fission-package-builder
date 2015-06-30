@@ -1,0 +1,7 @@
+Batali.define do
+  site 'https://supermarket.chef.io'
+
+  cookbook 'fpm-tng', git: 'git://github.com/hw-cookbooks/fpm-tng.git', ref: 'develop'
+  cookbook 'builder', git: 'git://github.com/hw-cookbooks/builder.git', ref: 'develop'
+  cookbook 'packager', git: 'git@github.com:heavywater/chef-packager.git', ref: 'develop'
+end
