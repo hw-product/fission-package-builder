@@ -1,3 +1,7 @@
+# v0.1.28
+* Update vendored cookbook versions
+* Attempt to find better error message
+
 # v0.1.26
 * Replace librarian with batali
 * Update vendored cookbooks
