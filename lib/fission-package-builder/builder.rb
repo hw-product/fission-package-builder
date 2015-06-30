@@ -66,10 +66,12 @@ module Fission
               end
               job_completed(:package_builder, payload, message)
             rescue => e
+              error "Builder setup failed #{message}: #{e.class}: #{e}"
               run_error = extract_chef_stacktrace(payload)
               failed(payload, message, run_error || e.message)
             end
           rescue => e
+            error "Unknown failure encountered #{message}: #{e.class}: #{e}"
             failed(payload, message, e.message)
           ensure
             keepalive.cancel
@@ -325,27 +327,22 @@ module Fission
       def extract_chef_stacktrace(payload)
         uuid = payload[:message_id]
         path = File.join(workspace(uuid, :log), "#{uuid}.log")
+        error_msg = 'Failed to extract error information!'
         if(File.exists?(path))
           debug "Found chef log file for error extraction (#{path})"
           content = File.readlines(path)
-          error_lines = content.find_all do |line|
-            line.include?('ERROR') &&
-              !line.include?('handlers')
+          start = content.index{|line| line.include?('ERROR')}
+          if(start)
+            if(content[start.next].include?('--- Begin'))
+              stop = content.index{|line| line.include?('--- End')}
+              error_msg = content.slice(start.next, stop - start.next).join("\n")
+            else
+              error_msg = content[start]
+            end
           end
-          error_lines.each do |line|
-            line.sub!(/^.+ERROR: /, '')
-            line.sub!(/^.+had an error: /, '')
-          end
-          if(error_lines.empty?)
-            error_lines.push('Failed to extract error information!')
-          end
-          error_msg = error_lines.join("\n")
-          debug "Extracted error message: #{error_msg}"
-          error_msg
-        else
-          debug "Failed to locate chef log file for error extraction (#{path})"
-          nil
         end
+        debug "Extracted error information: #{error_msg}"
+        error_msg
       end
 
     end
