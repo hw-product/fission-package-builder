@@ -337,7 +337,9 @@ module Fission
               stop = content.index{|line| line.include?('--- End')}
               error_msg = content.slice(start.next, stop - start.next).join("\n")
             else
-              error_msg = content[start]
+              errors = content.find_all{|line| line.include?('ERROR')}
+              debug "Found ERROR lines from log: #{errors.inspect}"
+              error_msg = errors.last
             end
           end
         end
