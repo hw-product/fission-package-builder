@@ -24,7 +24,7 @@ action :build do
       if(args[:dependencies][:runtime])
         depends args[:dependencies][:runtime]
       end
-      version args.fetch(:build, :version, node[:packager][:environment]['PACKAGER_VERSION'])
+      version args[:build].fetch(:version, node[:packager][:environment]['PACKAGER_VERSION'])
       chdir lazy{ node[:builder][:builds][args[:build][:name]][:packaging_path] }
     end
   end

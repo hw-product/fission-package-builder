@@ -283,7 +283,7 @@
       "version": "0.1.1",
       "source": {
         "url": "git@github.com:heavywater/chef-packager.git",
-        "ref": "dad090b844a5b9f5bfcf130404f5e5757c4be442",
+        "ref": "9bdcd402fd2a40a0077789e66584ae57a342d5af",
         "type": "Batali::Source::Git"
       }
     },
