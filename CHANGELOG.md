@@ -1,3 +1,6 @@
+# v0.1.30
+* [bugfix] Update vendored packager cookbook
+
 # v0.1.28
 * Update vendored cookbook versions
 * Attempt to find better error message
