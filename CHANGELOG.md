@@ -1,3 +1,6 @@
+# v0.1.32
+* Add formatter for repository-generator service
+
 # v0.1.30
 * [bugfix] Update vendored packager cookbook
 
