@@ -156,7 +156,9 @@ module Fission
       # Build the JSON for our chef run
       def build_chef_json(config, params, target_store)
         unless(config[:build][:version])
-          if(params.get(:data, :code_fetcher, :info, :reference).include?('tag'))
+          if(params.get(:data, :code_fetcher, :info, :reference).include?('tag') ||
+              params.get(:data, :code_fetcher, :info, :reference) == params.get(:data, :code_fetcher, :info, :commit_sha)
+          )
             config[:build][:version] = params.get(:data, :code_fetcher, :info, :reference).sub('refs/tags/', '')
           else
             config[:build][:version] = Time.now.strftime('%Y%m%d%H%M%S')
