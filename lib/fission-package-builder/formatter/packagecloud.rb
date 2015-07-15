@@ -15,6 +15,7 @@ module Fission
         # Distro mappings based on package extensions
         # @note fetched and formatted from this base
         #   JSON file: https://packagecloud.io/api/v1/distributions.json
+        # @todo Need to adjust the redhat/centos name and versioning junk
         DISTRO_MAPPINGS = {
           "deb" => {
             "ubuntu_410" => "ubuntu/warty",
