@@ -183,7 +183,7 @@ module Fission
               'PACKAGER_COMMIT_SHA' => params.get(:data, :code_fetcher, :info, :commit_sha),
               'PACKAGER_PUSHER_NAME' => params.get(:data, :code_fetcher, :info, :owner),
               'PACKAGER_PUSHER_EMAIL' => params.get(:data, :code_fetcher, :info, :push_email)
-            }
+            }.merge(config.fetch(:environment, {})
           },
           :fpm_tng => {
             :package_dir => workspace(params[:message_id], :packages),
