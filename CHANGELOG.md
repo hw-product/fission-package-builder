@@ -1,3 +1,7 @@
+# v0.1.34
+* Add initial package cloud formatting support
+* Generate customized info events during build process
+
 # v0.1.32
 * Add formatter for repository-generator service
 
