@@ -216,13 +216,39 @@ module Fission
           :bind => workspace(uuid),
           :ephemeral_command => command.join(' ')
         )
+        log_file = nil
+        log_content = ''
+        debug "Starting the event logger for new build action (path: #{log_file_path})"
+        event_logger = every(1) do
+          if(log_file)
+            log_content << log_file.read
+            items = log_content.split(/(\n|\[\d{4}-\d{2}-\d{2}T[0-9:-]+\])/)
+            items.slice(0, items.size - 1).each do |l_line|
+              l_line = l_line.sub(/^\[.+?\]/, '').strip
+              next if l_line.empty?
+              event!(:info, :info => l_line, :message_id => uuid)
+            end
+            log_content = items.last
+          else
+            if(File.exists?(log_file_path))
+              debug "Found log file to process at: #{log_file_path}"
+              log_file = File.open(log_file_path, 'r')
+            else
+              debug "Failed to locate log file to process at: #{log_file_path}"
+            end
+          end
+        end
         begin
-          ephemeral.start!
+          event!(:info, :info => 'Starting package build!', :message_id => uuid)
+          defer{ ephemeral.start! }
         rescue Lxc::CommandFailed => e
           error "Package build failed: #{e}"
           debug "Packaging error: #{e.inspect}"
           raise e
+        ensure
+          event_logger.cancel
         end
+        event!(:info, :info => 'Package build completed!', :message_id => uuid)
         debug "Finished command: #{command.join(' ')}"
       end
 
