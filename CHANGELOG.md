@@ -1,3 +1,6 @@
+# v0.1.36
+* Remove defer when running ephemeral command
+
 # v0.1.34
 * Add initial package cloud formatting support
 * Generate customized info events during build process
