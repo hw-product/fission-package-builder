@@ -62,16 +62,19 @@ module Fission
                   end
                 rescue => e
                   error "Failed to persist log data for message #{message}: #{e.class} - #{e}"
+                  debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
                 end
               end
               job_completed(:package_builder, payload, message)
             rescue => e
               error "Builder setup failed #{message}: #{e.class}: #{e}"
+              debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
               run_error = extract_chef_stacktrace(payload)
               failed(payload, message, run_error || e.message)
             end
           rescue => e
             error "Unknown failure encountered #{message}: #{e.class}: #{e}"
+            debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
             failed(payload, message, e.message)
           ensure
             keepalive.cancel
@@ -240,7 +243,7 @@ module Fission
         end
         begin
           event!(:info, :info => 'Starting package build!', :message_id => uuid)
-          defer{ ephemeral.start! }
+          ephemeral.start!
         rescue Lxc::CommandFailed => e
           error "Package build failed: #{e}"
           debug "Packaging error: #{e.inspect}"
