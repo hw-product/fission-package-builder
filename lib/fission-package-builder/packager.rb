@@ -54,9 +54,8 @@ module Fission
             File.open(ephemeral.lxc.rootfs.join('tmp/pkgr.rb'), 'w') do |file|
               file.puts wrapper_file
             end
-            com = "/opt/chef/embedded/bin/ruby -r/tmp/pkgr.rb -C#{File.dirname(path)} #{path}"
             result = ephemeral.lxc.execute(
-              "/opt/chef/embedded/bin/ruby -r/tmp/pkgr -C#{File.dirname(path)} #{path}"
+              "/opt/chef/embedded/bin/ruby -r/tmp/pkgr.rb -C#{File.dirname(path)} #{path}"
             )
             content = File.read(
               ephemeral.lxc.rootfs.join(
