@@ -1,3 +1,6 @@
+# v0.2.2
+* Set timeout on the build process request to prevent early termination
+
 # v0.2.0
 * Refactor to use remote process
 
