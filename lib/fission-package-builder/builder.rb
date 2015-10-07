@@ -245,7 +245,7 @@ module Fission
         # @todo zoidberg embed future for tracking on supervised cleanup
         future = Zoidberg::Future.new do
           begin
-            ephemeral.exec(command.join(' '), :stream => stream)
+            ephemeral.exec(command.join(' '), :stream => stream, :timeout => 3600)
           rescue => e
             error "Build failed (ID: #{uuid}): #{e.class} - #{e}"
             debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
