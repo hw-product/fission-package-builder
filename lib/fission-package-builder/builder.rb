@@ -5,10 +5,10 @@ require 'fission-package-builder/formatter'
 require 'fission-assets'
 require 'fission-assets/packer'
 
-require 'elecksee/ephemeral'
 
-Lxc.use_sudo = true
-Lxc.shellout_helper = :childprocess
+class QueueStream < Queue
+  alias_method :write, :push
+end
 
 module Fission
   module PackageBuilder
@@ -145,12 +145,31 @@ module Fission
       # @param repo_path [String]
       # @return [Smash]
       def load_config(repo_path)
+        result = nil
+        file_path = File.join(repo_path, Packager.file_name)
         begin
-          Packager.load(File.join(repo_path, Packager.file_name))
+          result = Packager.json_load(file_path)
+          unless(result)
+            ephemeral = remote_process
+            ephemeral.push_file(
+              StringIO.new(Packager.wrapper_file),
+              '/tmp/pkgr.rb'
+            )
+            ephemeral.push_file(File.open(file_path, 'r'), '/tmp/packager')
+            result = ephemeral.exec!('ruby -r/tmp/pkgr.rb -C/tmp /tmp/packager')
+            result = ephemeral.get_file(result.output.read.strip)
+          end
         rescue => e
           error "Failed to load configuration file: #{repo_path}/#{Packager.file_name} - #{e.class}: #{e.message}"
+          if(e.respond_to?(:result))
+            error "Failure reason: #{e.result.output}"
+          end
+          debug "#{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
           raise 'Failed to load configuration file!'
+        ensure
+          ephemeral.terminate
         end
+        result
       end
 
       # config:: build config hash
@@ -214,45 +233,60 @@ module Fission
         end
         log_file_path = File.join(workspace(uuid, :log), "#{uuid}.log")
         command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid), '-L', log_file_path]
-        ephemeral = Lxc::Ephemeral.new(
-          :original => base,
-          :bind => workspace(uuid),
-          :ephemeral_command => command.join(' ')
-        )
-        log_file = nil
-        log_content = ''
-        debug "Starting the event logger for new build action (path: #{log_file_path})"
-        event_logger = every(1) do
-          if(log_file)
-            log_content << log_file.read
-            items = log_content.split(/(\n|\[\d{4}-\d{2}-\d{2}T[0-9:-]+\])/)
-            items.slice(0, items.size - 1).each do |l_line|
-              l_line = l_line.sub(/^\[.+?\]/, '').strip
-              next if l_line.empty?
-              event!(:info, :info => l_line, :message_id => uuid)
-            end
-            log_content = items.last
-          else
-            if(File.exists?(log_file_path))
-              debug "Found log file to process at: #{log_file_path}"
-              log_file = File.open(log_file_path, 'r')
-            else
-              debug "Failed to locate log file to process at: #{log_file_path}"
-            end
+        ephemeral = remote_process(:image => base)
+        w_space = Fission::Assets::Packer.pack(workspace(uuid))
+        ephemeral.push_file(w_space, '/tmp/workspace.zip')
+        ephemeral.exec!("mkdir -p #{workspace(uuid)}")
+        ephemeral.exec!("unzip /tmp/workspace.zip -d #{workspace(uuid)}")
+        stream = QueueStream.new
+
+        event!(:info, :info => 'Starting package build!', :message_id => uuid)
+
+        # @todo zoidberg embed future for tracking on supervised cleanup
+        future = Zoidberg::Future.new do
+          begin
+            ephemeral.exec(command.join(' '), :stream => stream)
+          rescue => e
+            error "Build failed (ID: #{uuid}): #{e.class} - #{e}"
+            debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
+            Fission::Utils::RemoteProcess::Result(-1, "Build failed (ID: #{uuid}): #{e.class} - #{e}")
+          ensure
+            stream.write :complete
           end
         end
-        begin
-          event!(:info, :info => 'Starting package build!', :message_id => uuid)
-          ephemeral.start!
-        rescue Lxc::CommandFailed => e
-          error "Package build failed: #{e}"
-          debug "Packaging error: #{e.inspect}"
-          raise e
-        ensure
-          event_logger.cancel
+
+        until((lines = stream.pop) == :complete)
+          lines.split("\n").each do |line|
+            line = line.sub(/^\[.+?\]/, '').strip
+            next if line.empty?
+            debug "Log line: #{line}"
+            event!(:info, :info => line, :message_id => uuid)
+          end
         end
-        event!(:info, :info => 'Package build completed!', :message_id => uuid)
-        debug "Finished command: #{command.join(' ')}"
+
+        result = future.value
+
+        remote_log_file = ephemeral.get_file(log_file_path)
+        local_log_file = File.open(log_file_path, 'w') do |file|
+          if(remote_log_file.respond_to?(:readpartial))
+            while(line = remote_log_file.readpartial(2048))
+              file.write line
+            end
+          else
+            file.write remote_log_file
+          end
+        end
+        ephemeral.terminate
+
+        if(result && result.success?)
+          event!(:info, :info => 'Package build completed!', :message_id => uuid)
+          debug "Finished command: #{command.join(' ')}"
+        else
+          error "Package build failed: #{command.join(' ')}}"
+          error "Package build failed - Exit status of `#{result.exit_code}`"
+          error = Fission::Error::RemoteProcessFailed.new("Package build failed - Exit code: #{result.exit_code}")
+          raise error
+        end
       end
 
       # uuid:: unique id (message id)
