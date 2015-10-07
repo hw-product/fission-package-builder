@@ -1,3 +1,6 @@
+# v0.2.4
+* Pull assets from ephemeral to allow for expected upload
+
 # v0.2.2
 * Set timeout on the build process request to prevent early termination
 
