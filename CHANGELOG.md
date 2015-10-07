@@ -1,3 +1,6 @@
+# v0.2.0
+* Refactor to use remote process
+
 # v0.1.36
 * Remove defer when running ephemeral command
 
