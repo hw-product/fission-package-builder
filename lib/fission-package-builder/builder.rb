@@ -67,7 +67,7 @@ module Fission
               end
               job_completed(:package_builder, payload, message)
             rescue => e
-              error "Builder setup failed #{message}: #{e.class}: #{e}"
+              error "Builder failed #{message}: #{e.class}: #{e}"
               debug "#{e.class}: #{e}\n#{e.backtrace.join("\n")}"
               run_error = extract_chef_stacktrace(payload)
               failed(payload, message, run_error || e.message)
@@ -266,6 +266,20 @@ module Fission
 
         result = future.value
 
+        ephemeral.exec!("ls #{workspace(uuid, :packages)}").output.read.split("\n").each do |file|
+          file_path = File.join(workspace(uuid, :packages), file.strip)
+          remote_file = ephemeral.get_file(file_path)
+          File.open(file_path, 'wb') do |local_file|
+            if(remote_file.respond_to?(:readpartial))
+              while(content = remote_file.readpartial(2048))
+                local_file.write content
+              end
+            else
+              local_file.write remote_file
+            end
+          end
+        end
+
         remote_log_file = ephemeral.get_file(log_file_path)
         local_log_file = File.open(log_file_path, 'w') do |file|
           if(remote_log_file.respond_to?(:readpartial))
@@ -276,6 +290,7 @@ module Fission
             file.write remote_log_file
           end
         end
+
         ephemeral.terminate
 
         if(result && result.success?)
