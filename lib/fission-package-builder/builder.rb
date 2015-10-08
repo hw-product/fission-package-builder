@@ -157,7 +157,7 @@ module Fission
             )
             ephemeral.push_file(File.open(file_path, 'r'), '/tmp/packager')
             result = ephemeral.exec!('ruby -r/tmp/pkgr.rb -C/tmp /tmp/packager')
-            result = ephemeral.get_file(result.output.read.strip)
+            result = MultiJson.load(ephemeral.get_file(result.output.read.strip).to_s).to_smash
           end
         rescue => e
           error "Failed to load configuration file: #{repo_path}/#{Packager.file_name} - #{e.class}: #{e.message}"
