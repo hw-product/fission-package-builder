@@ -1,3 +1,6 @@
+# v0.2.6
+* Fetch files are no longer auto extracted
+
 # v0.2.4
 * Pull assets from ephemeral to allow for expected upload
 
