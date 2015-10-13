@@ -147,6 +147,7 @@ module Fission
       def load_config(repo_path)
         result = nil
         file_path = File.join(repo_path, Packager.file_name)
+        ephemeral = nil
         begin
           result = Packager.json_load(file_path)
           unless(result)
@@ -167,7 +168,7 @@ module Fission
           debug "#{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
           raise 'Failed to load configuration file!'
         ensure
-          ephemeral.terminate
+          ephemeral.terminate if ephemeral
         end
         result
       end
