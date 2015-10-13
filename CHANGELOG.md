@@ -1,3 +1,6 @@
+# v0.2.8
+* Properly kill ephemeral if it was built
+
 # v0.2.6
 * Fetch files are no longer auto extracted
 
