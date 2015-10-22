@@ -1,3 +1,6 @@
+# v0.2.10
+* Update how file contents are parsed
+
 # v0.2.8
 * Properly kill ephemeral if it was built
 
