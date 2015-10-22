@@ -5,11 +5,6 @@ require 'fission-package-builder/formatter'
 require 'fission-assets'
 require 'fission-assets/packer'
 
-
-class QueueStream < Queue
-  alias_method :write, :push
-end
-
 module Fission
   module PackageBuilder
     class Builder < Fission::Callback
@@ -158,7 +153,12 @@ module Fission
             )
             ephemeral.push_file(File.open(file_path, 'r'), '/tmp/packager')
             result = ephemeral.exec!('ruby -r/tmp/pkgr.rb -C/tmp /tmp/packager')
-            result = MultiJson.load(ephemeral.get_file(result.output.read.strip).to_s).to_smash
+            remote_file_path = result.output.read.strip
+            result = ephemeral.get_file(remote_file_path)
+            if(result.is_a?(String))
+              result = MultiJson.load(result)
+            end
+            result = result.to_smash
           end
         rescue => e
           error "Failed to load configuration file: #{repo_path}/#{Packager.file_name} - #{e.class}: #{e.message}"
@@ -233,13 +233,13 @@ module Fission
           f.puts json
         end
         log_file_path = File.join(workspace(uuid, :log), "#{uuid}.log")
-        command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid), '-L', log_file_path]
+        command = [chef_exec_path, '-j', json_path, '-c', write_solo_config(uuid), '-L', log_file_path, '--force-logger']
         ephemeral = remote_process(:image => base)
         w_space = Fission::Assets::Packer.pack(workspace(uuid))
         ephemeral.push_file(w_space, '/tmp/workspace.zip')
         ephemeral.exec!("mkdir -p #{workspace(uuid)}")
         ephemeral.exec!("unzip /tmp/workspace.zip -d #{workspace(uuid)}")
-        stream = QueueStream.new
+        stream = Fission::Utils::RemoteProcess::QueueStream.new
 
         event!(:info, :info => 'Starting package build!', :message_id => uuid)
 
