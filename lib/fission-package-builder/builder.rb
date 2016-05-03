@@ -9,9 +9,9 @@ module Fission
   module PackageBuilder
     class Builder < Fission::Callback
 
-      DEFAULT_PLATFORM = 'ubuntu_1404'
+      DEFAULT_PLATFORM = 'ubuntu_1604'
       DEFAULT_PACKAGE = 'deb'
-      DEFAULT_UBUNTU_VERSION = '14.04'
+      DEFAULT_UBUNTU_VERSION = '16.04'
 
       # Validity of message for processing
       #
@@ -225,6 +225,9 @@ module Fission
       def start_build(uuid, json, base={})
         if(base[:platform])
           base = "#{base[:platform]}_#{base.fetch(:version, DEFAULT_UBUNTU_VERSION).gsub('.', '')}"
+          if(base[:arch] && base[:arch] != 'amd64')
+            base = "#{base}_#{base[:arch]}"
+          end
         else
           base = DEFAULT_PLATFORM
         end
