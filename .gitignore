@@ -3,3 +3,4 @@
 !.librarian*
 tmp*
 *.lock
+*.gem
